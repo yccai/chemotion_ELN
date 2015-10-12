@@ -3,7 +3,7 @@ import {Row, Col, Input, ListGroupItem, ListGroup} from 'react-bootstrap'
 import Select from 'react-select'
 import {solventOptions, purificationOptions, statusOptions, dangerousProductsOptions}
   from './staticDropdownOptions/options';
-
+import DateTimeField from 'react-bootstrap-datetimepicker';
 export default class ReactionDetailsProperties extends Component {
 
   constructor(props) {
@@ -46,12 +46,6 @@ export default class ReactionDetailsProperties extends Component {
       case 'rfValue':
         reaction.rf_value = value;
         break;
-      case 'timestampStart':
-        reaction.timestamp_start = value;
-        break;
-      case 'timestampStop':
-        reaction.timestamp_stop = value;
-        break;
       case 'tlcDescription':
         reaction.tlc_description = value;
         break;
@@ -76,6 +70,21 @@ export default class ReactionDetailsProperties extends Component {
     const wrappedEvent = {target: {value: values}};
     this.handleInputChange(type, wrappedEvent)
   }
+
+  handleTimeChange(type, date) {
+    const {onReactionChange} = this.props;
+    let {reaction} = this.state;
+    switch (type) {
+      case 'timestampStart':
+        reaction.timestamp_start = date;
+        break;
+      case 'timestampStop':
+        reaction.timestamp_stop = date;
+        break;
+    }
+    onReactionChange(reaction);
+  }
+
 
   render() {
     const {reaction} = this.state;
