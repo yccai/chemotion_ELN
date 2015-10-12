@@ -4,6 +4,7 @@ import Select from 'react-select'
 import {solventOptions, purificationOptions, statusOptions, dangerousProductsOptions}
   from './staticDropdownOptions/options';
 import DateTimeField from 'react-bootstrap-datetimepicker';
+import moment from "moment";
 export default class ReactionDetailsProperties extends Component {
 
   constructor(props) {
@@ -141,20 +142,18 @@ export default class ReactionDetailsProperties extends Component {
               />
             </Col>
             <Col md={4}>
-              <Input
-                type="text"
-                label="Start"
-                value={reaction.timestamp_start}
-                placeholder="Start..."
-                onChange={event => this.handleInputChange('timestampStart', event)}/>
+              <b>Start</b>
+              <DateTimeField
+                dateTime={reaction.timestamp_start || moment()}
+                onChange={event => this.handleTimeChange('timestampStart', event)}
+              />
             </Col>
             <Col md={4}>
-              <Input
-                type="text"
-                label="Stop"
-                value={reaction.timestamp_stop}
-                placeholder="Stop..."
-                onChange={event => this.handleInputChange('timestampStop', event)}/>
+              <b>Stop</b>
+              <DateTimeField
+                dateTime={reaction.timestamp_stop || moment()}
+                onChange={event => this.handleTimeChange('timestampStop', event)}
+              />
             </Col>
           </Row>
           <Row>
