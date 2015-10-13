@@ -86,6 +86,23 @@ export default class ReactionDetailsProperties extends Component {
     onReactionChange(reaction);
   }
 
+  dateTimeField(type, value) {
+    if (value != null) {
+      return (
+        <DateTimeField
+          dateTime={value}
+          onChange={event => this.handleTimeChange('timestamp'+type, event)}
+        />
+      )
+    } else {
+      return (
+        <DateTimeField
+          defaultText={"Please select a date"}
+          onChange={event => this.handleTimeChange('timestamp'+type, event)}
+        />
+      )
+    }
+  }
 
   render() {
     const {reaction} = this.state;
@@ -143,17 +160,11 @@ export default class ReactionDetailsProperties extends Component {
             </Col>
             <Col md={4}>
               <b>Start</b>
-              <DateTimeField
-                dateTime={reaction.timestamp_start || moment()}
-                onChange={event => this.handleTimeChange('timestampStart', event)}
-              />
+              {this.dateTimeField('Start', reaction.timestamp_start)}
             </Col>
             <Col md={4}>
               <b>Stop</b>
-              <DateTimeField
-                dateTime={reaction.timestamp_stop || moment()}
-                onChange={event => this.handleTimeChange('timestampStop', event)}
-              />
+              {this.dateTimeField('Stop', reaction.timestamp_stop)}
             </Col>
           </Row>
           <Row>
