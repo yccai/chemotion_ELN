@@ -17,6 +17,7 @@
     "path": "^0.11.14",
     "react": "0.13.3",
     "react-bootstrap": "0.24.2",
+    "react-bootstrap-datetimepicker": "0.0.20",
     "react-cookie": "^0.2.6",
     "react-dnd": "^1.1.8",
     "react-dropzone": "^2.2.0",
