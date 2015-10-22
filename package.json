@@ -17,7 +17,7 @@
     "path": "^0.11.14",
     "react": "0.13.3",
     "react-bootstrap": "0.24.2",
-    "react-bootstrap-datetimepicker": "0.0.20",
+    "react-bootstrap-datetimepicker": "https://github.com/fertaku/react-bootstrap-datetimepicker/tarball/c00516d6fc32d6ac6c225c2354b7083b403f38b5",
     "react-cookie": "^0.2.6",
     "react-dnd": "^1.1.8",
     "react-dropzone": "^2.2.0",
