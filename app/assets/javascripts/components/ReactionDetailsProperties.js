@@ -87,7 +87,7 @@ export default class ReactionDetailsProperties extends Component {
   }
 
   dateTimeField(type, value) {
-    if (value != null) {
+    if (value != null && value != "") {
       return (
         <DateTimeField
           dateTime={value}
