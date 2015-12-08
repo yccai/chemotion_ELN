@@ -1,9 +1,10 @@
 import React from 'react';
 import ElementsTable from './ElementsTable';
-import {TabbedArea, TabPane} from 'react-bootstrap';
+import {Input, TabbedArea, TabPane} from 'react-bootstrap';
 import ElementStore from './stores/ElementStore';
 import UIStore from './stores/UIStore';
 import UIActions from './actions/UIActions';
+import MoleculeContainerView from './MoleculeContainerView';
 
 export default class List extends React.Component {
   constructor(props) {
@@ -13,13 +14,14 @@ export default class List extends React.Component {
       totalReactionElements: 0,
       totalWellplateElements: 0,
       totalScreenElements: 0,
-      currentTab: 1
+      currentTab: 1,
+      withMoleculeContainer: false
     }
   }
 
   _checkedElements(type) {
     let elementUI = UIStore.getState()[type];
-    let element   = ElementStore.getState()['elements'][type+"s"];
+    let element   = ElementStore.getState()['elements'][type];
     if (elementUI.checkedAll) {
       return element.totalElements - elementUI.uncheckedIds.size;
     } else {
@@ -39,10 +41,10 @@ export default class List extends React.Component {
 
   onChange(state) {
     this.setState({
-      totalSampleElements: state.elements.samples.totalElements,
-      totalReactionElements: state.elements.reactions.totalElements,
-      totalWellplateElements: state.elements.wellplates.totalElements,
-      totalScreenElements: state.elements.screens.totalElements
+      totalSampleElements: state.elements.sample.totalElements,
+      totalReactionElements: state.elements.reaction.totalElements,
+      totalWellplateElements: state.elements.wellplate.totalElements,
+      totalScreenElements: state.elements.screen.totalElements
     });
   }
 
@@ -78,6 +80,40 @@ export default class List extends React.Component {
     UIActions.setPagination({type: type, page: page})
   }
 
+  moleculeContainerCheckbox() {
+    return (
+      <Input type='checkbox'
+             label='With molecule container'
+             checked={this.state.withMoleculeContainer}
+             onChange={() => this.handleMoleculeContainerChange()}/>
+    )
+  }
+
+  handleMoleculeContainerChange() {
+    const { withMoleculeContainer } = this.state;
+    this.setState({
+      withMoleculeContainer: !withMoleculeContainer
+    });
+  }
+
+  sampleTable() {
+    if(this.state.withMoleculeContainer) {
+      return (
+        <div>
+          <MoleculeContainerView />
+          {this.moleculeContainerCheckbox()}
+        </div>
+      )
+    } else {
+      return (
+        <div>
+          <ElementsTable overview={this.props.overview} type='sample' />
+          {this.moleculeContainerCheckbox()}
+        </div>
+      )
+    }
+  }
+
   render() {
     const {overview} = this.props;
     let samples =
@@ -101,7 +137,7 @@ export default class List extends React.Component {
       <TabbedArea defaultActiveKey={this.state.currentTab} activeKey={this.state.currentTab}
                   onSelect={(e) => this.handleTabSelect(e)}>
         <TabPane eventKey={1} tab={samples}>
-          <ElementsTable overview={overview} type='sample'/>
+          {this.sampleTable()}
         </TabPane>
         <TabPane eventKey={2} tab={reactions}>
           <ElementsTable overview={overview} type='reaction'/>

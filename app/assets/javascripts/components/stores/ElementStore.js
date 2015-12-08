@@ -12,30 +12,31 @@ import Screen from '../models/Screen';
 
 class ElementStore {
   constructor() {
+    // TODO cleanup
     this.state = {
       elements: {
-        samples: {
+        sample: {
           elements: [],
           totalElements: 0,
           page: null,
           pages: null,
           perPage: null
         },
-        reactions: {
+        reaction: {
           elements: [],
           totalElements: 0,
           page: null,
           pages: null,
           perPage: null
         },
-        wellplates: {
+        wellplate: {
           elements: [],
           totalElements: 0,
           page: null,
           pages: null,
           perPage: null
         },
-        screens: {
+        screen: {
           elements: [],
           totalElements: 0,
           page: null,
@@ -45,7 +46,8 @@ class ElementStore {
       },
       currentElement: null,
       currentReaction: null,
-      currentMaterialGroup: null
+      currentMaterialGroup: null,
+      moleculeNames: []
     };
 
     this.bindListeners({
@@ -57,6 +59,8 @@ class ElementStore {
       handleCopySampleFromClipboard: ElementActions.copySampleFromClipboard,
       handleAddSampleToMaterialGroup: ElementActions.addSampleToMaterialGroup,
       handleImportSamplesFromFile: ElementActions.importSamplesFromFile,
+      handleFetchMoleculeNames: ElementActions.fetchMoleculeNames,
+      handleFetchSamplesByMoleculeName: ElementActions.fetchSamplesByMoleculeName,
 
       handleFetchReactionById: ElementActions.fetchReactionById,
       handleFetchReactionsByCollectionId: ElementActions.fetchReactionsByCollectionId,
@@ -155,24 +159,33 @@ class ElementStore {
   }
 
   // -- Samples --
+  handleFetchSamplesByMoleculeName(resultAndMoleculeName) {
+    const {result, moleculeName} = resultAndMoleculeName;
+    this.state.elements[moleculeName] = result;
+    this.state.currentMoleculeName = moleculeName;
+  }
+
+  handleFetchMoleculeNames(result) {
+    this.state.moleculeNames = result.names;
+  }
 
   handleFetchSampleById(result) {
     this.state.currentElement = result;
   }
 
   handleFetchSamplesByCollectionId(result) {
-    this.state.elements.samples = result;
+    this.state.elements.sample = result;
   }
 
   handleUpdateSample(sample) {
     this.state.currentElement = sample;
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'sample'});
   }
 
   handleCreateSample(sample) {
     UserActions.fetchCurrentUser();
 
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'sample'});
     this.navigateToNewElement(sample);
   }
 
@@ -184,7 +197,7 @@ class ElementStore {
   handleFetchMoleculeByMolfile(result) {
     // Attention: This is intended to update SampleDetails
     this.state.currentElement.molecule = result;
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'sample'});
   }
 
   handleCopySampleFromClipboard(collection_id) {
@@ -208,14 +221,14 @@ class ElementStore {
   }
 
   handleImportSamplesFromFile(result) {
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'sample'});
   }
 
   // -- Wellplates --
 
   handleBulkCreateWellplatesFromSamples() {
-    this.handleRefreshElements('wellplate');
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'wellplate'});
+    this.handleRefreshElements({type: 'sample'});
   }
 
   handleFetchWellplateById(result) {
@@ -223,17 +236,17 @@ class ElementStore {
   }
 
   handleFetchWellplatesByCollectionId(result) {
-    this.state.elements.wellplates = result;
+    this.state.elements.wellplate = result;
   }
 
   handleUpdateWellplate(wellplate) {
     this.state.currentElement = wellplate;
-    this.handleRefreshElements('wellplate');
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'wellplate'});
+    this.handleRefreshElements({type: 'sample'});
   }
 
   handleCreateWellplate(wellplate) {
-    this.handleRefreshElements('wellplate');
+    this.handleRefreshElements({type: 'wellplate'});
     this.navigateToNewElement(wellplate);
   }
 
@@ -249,16 +262,16 @@ class ElementStore {
   }
 
   handleFetchScreensByCollectionId(result) {
-    this.state.elements.screens = result;
+    this.state.elements.screen = result;
   }
 
   handleUpdateScreen(screen) {
     this.state.currentElement = screen;
-    this.handleRefreshElements('screen');
+    this.handleRefreshElements({type: 'screen'});
   }
 
   handleCreateScreen(screen) {
-    this.handleRefreshElements('screen');
+    this.handleRefreshElements({type: 'screen'});
     this.navigateToNewElement(screen);
   }
 
@@ -275,17 +288,17 @@ class ElementStore {
   }
 
   handleFetchReactionsByCollectionId(result) {
-    this.state.elements.reactions = result;
+    this.state.elements.reaction = result;
   }
 
   handleUpdateReaction(reaction) {
     this.state.currentElement = reaction;
-    this.handleRefreshElements('reaction');
-    this.handleRefreshElements('sample');
+    this.handleRefreshElements({type: 'reaction'});
+    this.handleRefreshElements({type: 'sample'});
   }
 
   handleCreateReaction(reaction) {
-    this.handleRefreshElements('reaction');
+    this.handleRefreshElements({type: 'reaction'});
     this.navigateToNewElement(reaction);
   }
 
@@ -307,7 +320,7 @@ class ElementStore {
 
   handleDeleteReactionLiterature(reactionId) {
     ElementActions.fetchLiteraturesByReactionId(reactionId);
-    this.handleRefreshElements('reaction');
+    this.handleRefreshElements({type: 'reaction'});
   }
 
   handleFetchLiteraturesByReactionId(result) {
@@ -344,36 +357,56 @@ class ElementStore {
     this.state.currentElement = null;
   }
 
+  // FIXME: listens to UIAction !
   handleSetPagination(pagination) {
     this.waitFor(UIStore.dispatchToken);
-    this.handleRefreshElements(pagination.type);
+    this.handleRefreshElements(pagination);
   }
 
-  handleRefreshElements(type) {
+  // TODO refactor me
+  handleRefreshElements(params) {
+    const {type, moleculeName, page} = params;
     this.waitFor(UIStore.dispatchToken);
     let uiState = UIStore.getState();
-    let page = uiState[type].page;
 
-    this.state.elements[type+'s'].page = page;
+    if(moleculeName) {
+      this.state.elements[moleculeName].page = page || 1;
+    } else {
+      this.state.elements[type].page = page || 1;
+    }
+
     let currentSearchSelection = uiState.currentSearchSelection;
-
+    const {currentMoleculeName} = this.state;
     // TODO if page changed -> fetch
     // if there is a currentSearchSelection we have to execute the respective action
     if(currentSearchSelection != null) {
       ElementActions.fetchBasedOnSearchSelectionAndCollection(currentSearchSelection, uiState.currentCollection.id, page);
+    } else if (moleculeName) {
+      ElementActions.fetchSamplesByMoleculeName({
+        moleculeName: moleculeName,
+        page: page,
+        per_page: uiState[moleculeName].numberOfResults
+      });
     } else {
       switch (type) {
         case 'sample':
-          ElementActions.fetchSamplesByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.number_of_results});
+          ElementActions.fetchSamplesByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.numberOfResults});
+          if(currentMoleculeName) {
+            ElementActions.fetchSamplesByMoleculeName({
+              moleculeName: currentMoleculeName,
+              page: this.state.elements[currentMoleculeName].page,
+              per_page: this.state.elements[currentMoleculeName].perPage
+            });
+          }
           break;
         case 'reaction':
-          ElementActions.fetchReactionsByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.number_of_results});
+          ElementActions.fetchReactionsByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.numberOfResults});
           break;
         case 'wellplate':
-          ElementActions.fetchWellplatesByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.number_of_results});
+          ElementActions.fetchWellplatesByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.numberOfResults});
           break;
         case 'screen':
-          ElementActions.fetchScreensByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.number_of_results});
+          ElementActions.fetchScreensByCollectionId(uiState.currentCollection.id, {page: page, per_page: uiState.numberOfResults});
           break;
       }
     }

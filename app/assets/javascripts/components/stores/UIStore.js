@@ -38,7 +38,7 @@ class UIStore {
         page: 1
       },
       showPreviews: true,
-      number_of_results: 7,
+      numberOfResults: 7,
       currentCollection: null,
       currentCollectionId: null,
       currentTab: 1,
@@ -156,7 +156,7 @@ class UIStore {
       // FIXME why both?
       this.state.currentCollection = collection;
       this.state.currentCollectionId = collection.id;
-      this.state.number_of_results = 7;
+      this.state.numberOfResults = 7;
 
       ElementActions.fetchSamplesByCollectionId(collection.id, state.pagination);
       ElementActions.fetchReactionsByCollectionId(collection.id, state.pagination);
@@ -165,9 +165,10 @@ class UIStore {
     }
   }
 
-  // FIXME this method is also defined in ElementStore
+  // FIXME this method is also defined in ElementStore; remove?
   handleSetPagination(pagination) {
     let {type, page} = pagination;
+    // TODO is this line necessary?
     this.state[type].page = page;
   }
 
@@ -185,8 +186,15 @@ class UIStore {
     this.state.currentSearchSelection = null;
   }
 
-  handleChangeNumberOfResultsShown(value) {
-    this.state.number_of_results = value;
+  handleChangeNumberOfResultsShown(params) {
+    const {value, moleculeName} = params;
+
+    if(moleculeName) {
+      this.state[moleculeName] = {};
+      this.state[moleculeName].numberOfResults = value;
+    } else {
+      this.state.numberOfResults = value;
+    }
   }
 }
 

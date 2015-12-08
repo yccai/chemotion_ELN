@@ -46,6 +46,26 @@ class ElementActions {
 
 
   // -- Samples --
+  fetchSamplesByMoleculeName(params) {
+    SamplesFetcher.fetchByMoleculeName(params)
+      .then((result) => {
+        this.dispatch({
+          result: result,
+          moleculeName: params.moleculeName
+        });
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
+
+  fetchMoleculeNames() {
+    MoleculesFetcher.fetchMoleculeNames()
+      .then((result) => {
+        this.dispatch(result);
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
 
   fetchSampleById(id) {
     SamplesFetcher.fetchById(id)

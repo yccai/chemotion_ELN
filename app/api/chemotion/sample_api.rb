@@ -3,6 +3,16 @@ module Chemotion
     include Grape::Kaminari
 
     resource :samples do
+      namespace :molecule_name do
+        desc "Return samples by molecule name"
+        paginate per_page: 7, offset: 0
+        route_param :name do
+          get do
+            samples = Sample.for_user(current_user.id).by_iupac_name(params[:name]).uniq
+            {samples: paginate(Kaminari.paginate_array(samples.map{|s| ElementPermissionProxy.new(current_user, s).serialized})) }
+          end
+        end
+      end
 
       # TODO Refactoring: Use Grape Entities
       namespace :ui_state do

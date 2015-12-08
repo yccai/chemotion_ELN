@@ -11,7 +11,7 @@ import SVG from 'react-inlinesvg';
 import DragDropItemTypes from './DragDropItemTypes';
 import classnames from 'classnames';
 
-export default class ElementsTableEntries extends Component {
+export default class SamplesByMoleculeTableEntries extends Component {
   isElementChecked(element) {
     let {checkedIds, uncheckedIds, checkedAll} = this.props.ui;
     return (checkedAll && ArrayUtils.isValNotInArray(uncheckedIds || [], element.id))
@@ -55,40 +55,6 @@ export default class ElementsTableEntries extends Component {
           <i className="fa fa-user-secret"></i>
         </OverlayTrigger>
       )
-    }
-  }
-
-  previewColumn(element) {
-    const {ui} = this.props;
-    const classNames = classnames(
-      {
-        'molecule': element.type == 'sample'
-      },
-      {
-        'reaction': element.type == 'reaction'
-      },
-      {
-        'molecule-selected': element.type == 'sample' && this.isElementSelected(element)
-      },
-      {
-        'reaction-selected': element.type == 'reaction' && this.isElementSelected(element)
-      }
-    );
-
-    let svgContainerStyle = {
-      verticalAlign: 'middle',
-      textAlign: 'center',
-      cursor: 'pointer'
-    };
-
-    if(ui.showPreviews && (element.type == 'sample' || element.type == 'reaction')) {
-      return (
-        <td style={svgContainerStyle} onClick={e => this.showDetails(element)}>
-          <SVG src={element.svgPath} className={classNames} key={element.svgPath}/>
-        </td>
-      );
-    } else {
-      return <td style={{display:'none', cursor: 'pointer'}} onClick={e => this.showDetails(element)}/>;
     }
   }
 
@@ -163,19 +129,16 @@ export default class ElementsTableEntries extends Component {
 
     return (
       <tr key={index} style={style}>
-        <td>
+        <td width="30">
           <ElementCheckbox element={element} key={element.id} checked={this.isElementChecked(element)}/><br/>
         </td>
         <td onClick={e => this.showDetails(element)} style={{cursor: 'pointer'}}>
           {element.title()}&nbsp;
           {this.reactionStatus(element)}
-          <br/>
-          {sampleMoleculeName}
           <ElementCollectionLabels element={element} key={element.id}/>
           {this.sampleAnalysesLabels(element)}
           {this.topSecretIcon(element)}
         </td>
-        {this.previewColumn(element)}
         {this.dragColumn(element)}
       </tr>
     )

@@ -52,10 +52,10 @@ export default class SearchFetcher {
         }
 
         return {
-          samples: samples,
-          reactions: reactions,
-          wellplates: wellplates,
-          screens: screens
+          sample: samples,
+          reaction: reactions,
+          wellplate: wellplates,
+          screen: screens
         };
       }).catch((errorMessage) => {
         console.log(errorMessage);

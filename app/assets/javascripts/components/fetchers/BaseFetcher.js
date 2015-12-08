@@ -2,10 +2,10 @@ import 'whatwg-fetch';
 
 export default class BaseFetcher {
   /**
-   * @param {Object} params = { apiEndpoint, requestMethod, bodyData, jsonTranformation }
+   * @param {Object} params = { apiEndpoint, requestMethod, bodyData, responseTranformation }
    */
   static withBodyData(params) {
-    const { apiEndpoint, requestMethod, bodyData, jsonTranformation } = params;
+    const { apiEndpoint, requestMethod, bodyData, responseTranformation } = params;
     let promise = fetch(apiEndpoint, {
       credentials: 'same-origin',
       method: requestMethod,
@@ -15,9 +15,7 @@ export default class BaseFetcher {
       },
       body: JSON.stringify(bodyData)
     }).then((response) => {
-      return response.json()
-    }).then((json) => {
-      return jsonTranformation(json)
+      return responseTranformation(response);
     }).catch((errorMessage) => {
       console.log(errorMessage);
     });
@@ -26,18 +24,16 @@ export default class BaseFetcher {
   }
 
   /**
-   * @param {Object} params = { apiEndpoint, requestMethod, jsonTranformation }
+   * @param {Object} params = { apiEndpoint, requestMethod, responseTranformation }
    */
   static withoutBodyData(params) {
-    const { apiEndpoint, requestMethod, jsonTranformation } = params;
+    const { apiEndpoint, requestMethod, responseTranformation } = params;
 
     let promise = fetch(apiEndpoint, {
       credentials: 'same-origin',
       method: requestMethod
     }).then((response) => {
-      return response.json()
-    }).then((json) => {
-      return jsonTranformation(json)
+      return responseTranformation(response);
     }).catch((errorMessage) => {
       console.log(errorMessage);
     });

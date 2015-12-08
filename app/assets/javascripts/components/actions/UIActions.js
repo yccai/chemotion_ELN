@@ -74,8 +74,8 @@ class UIActions {
     this.dispatch();
   }
 
-  changeNumberOfResultsShown(value) {
-    this.dispatch(value);
+  changeNumberOfResultsShown(params) {
+    this.dispatch(params);
   }
 }
 

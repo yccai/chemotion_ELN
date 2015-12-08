@@ -7,6 +7,7 @@ export default class SampleDetailsAnalyses extends Component {
   constructor(props) {
     super();
     const {sample} = props;
+    console.log(sample.unwrap())
     this.state = {
       sample,
       activeAnalysis: 0
@@ -20,11 +21,10 @@ export default class SampleDetailsAnalyses extends Component {
   }
 
   handleAdd() {
+    console.log(this.props.sample.unwrap())
     const {sample} = this.state;
     // model: sample.createAnalysis()
-
     let analysis = Analysis.buildEmpty();
-
     sample.addAnalysis(analysis);
 
     const newKey = sample.analyses.length - 1;
@@ -35,9 +35,13 @@ export default class SampleDetailsAnalyses extends Component {
 
   handleRemove(analysis) {
     const {sample} = this.state;
+    let analyses = sample.analyses.map((a) => a.unwrap());
+
     // sample.removeAnalysis(analysis)
-    const analysisId = sample.analyses.indexOf(analysis);
-    sample.analyses.splice(analysisId, 1);
+    const analysisId = analyses.indexOf(analysis.unwrap());
+    analyses.splice(analysisId, 1);
+
+    sample.analyses = analyses;
     this.props.onSampleChanged(sample);
   }
 
@@ -47,7 +51,7 @@ export default class SampleDetailsAnalyses extends Component {
 
   addButton() {
     const {readOnly} = this.props;
-    if(! readOnly) {
+    if(!readOnly) {
       return (
         <div className="pull-right" style={{marginTop: -12}}>
           <Button bsSize="xsmall" bsStyle="success" onClick={() => this.handleAdd()}>

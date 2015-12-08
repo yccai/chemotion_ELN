@@ -2,8 +2,29 @@ import 'whatwg-fetch';
 import Sample from '../models/Sample';
 import ElementPermissionProxy from '../proxies/ElementPermissionProxy';
 import _ from 'lodash';
+import BaseFetcher from './BaseFetcher';
 
 export default class SamplesFetcher {
+  static fetchByMoleculeName(params) {
+    let page = params.page || 1;
+    let per_page = params.per_page || 1;
+    return BaseFetcher.withoutBodyData({
+      apiEndpoint: `/api/v1/samples/molecule_name/${params.moleculeName}?page=${page}&per_page=${per_page}`,
+      requestMethod: 'GET',
+      responseTranformation: (response) => {
+        return response.json().then((json) => {
+          return {
+            elements: json.samples.map((s) => new ElementPermissionProxy(new Sample(s))),
+            totalElements: parseInt(response.headers.get('X-Total')),
+            page: parseInt(response.headers.get('X-Page')),
+            pages: parseInt(response.headers.get('X-Total-Pages')),
+            perPage: parseInt(response.headers.get('X-Per-Page'))
+          }
+        });
+      }
+    });
+  }
+
   static fetchByUIState(params) {
     let promise = fetch('/api/v1/samples/ui_state/', {
       credentials: 'same-origin',

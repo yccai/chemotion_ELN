@@ -11,6 +11,13 @@ module Chemotion
       post do
         Molecule.find_or_create_by_molfile(params[:molfile])
       end
+
+      resource :names do
+        desc "Return molecule names"
+        get do
+          Molecule.pluck(:iupac_name).uniq
+        end
+      end
     end
   end
 end

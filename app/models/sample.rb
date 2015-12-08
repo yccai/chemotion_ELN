@@ -39,6 +39,7 @@ class Sample < ActiveRecord::Base
   scope :by_reaction_reactant_ids, ->(ids) { joins(:reactions_as_reactant).where('reactions.id in (?)', ids) }
   scope :by_reaction_product_ids,  ->(ids) { joins(:reactions_as_product).where('reactions.id in (?)', ids) }
   scope :by_reaction_material_ids, ->(ids) { joins(:reactions_as_starting_material).where('reactions.id in (?)', ids) }
+  scope :by_iupac_name,            ->(name) { joins(:molecule).where('molecules.iupac_name = ?', name) }
 
   has_many :collections_samples, dependent: :destroy
   has_many :collections, through: :collections_samples

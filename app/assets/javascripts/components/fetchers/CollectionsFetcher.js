@@ -15,7 +15,7 @@ export default class CollectionsFetcher {
     return BaseFetcher.withoutBodyData({
       apiEndpoint: '/api/v1/collections/locked.json',
       requestMethod: 'GET',
-      jsonTranformation: (json) => { return json }
+      responseTranformation: (response) => { return response.json() }
     });
   }
 

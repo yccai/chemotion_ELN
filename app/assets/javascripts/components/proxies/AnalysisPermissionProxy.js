@@ -14,6 +14,10 @@ export default class AnalysisPermissionProxy {
     this.isMethodDisabled = (methodName) => {
       return this.methodOrRestrictionPattern(analysis, parentSample, methodName) == this.restrictionPattern;
     };
+
+    this.unwrap = () => {
+      return analysis;
+    }
   }
 
   methodOrRestrictionPattern(analysis, parentSample, m) {

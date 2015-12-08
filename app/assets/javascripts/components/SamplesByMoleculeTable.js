@@ -1,47 +1,31 @@
 import React from 'react';
 import {Label, Pagination, Table, Input} from 'react-bootstrap';
-
 import UIStore from './stores/UIStore';
 import UIActions from './actions/UIActions';
 import ElementActions from './actions/ElementActions';
-
 import ElementStore from './stores/ElementStore';
-import ElementAllCheckbox from './ElementAllCheckbox';
-import ElementsTableEntries from './ElementsTableEntries';
-import ElementsSvgCheckbox from './ElementsSvgCheckbox';
-
+import SamplesByMoleculeTableEntries from './SamplesByMoleculeTableEntries';
 import deepEqual from 'deep-equal';
 
-export default class ElementsTable extends React.Component {
+export default class SamplesByMoleculeTable extends React.Component {
   constructor(props) {
     super(props);
 
-    const currentUIState = UIStore.getState();
-    const currentElementTypeState = ElementStore.getState().elements[props.type];
-
+    // TODO proper initialization
     this.state = {
-      elements: currentElementTypeState.elements,
-      page: currentElementTypeState.page,
-      perPage: currentElementTypeState.perPage,
-      totalElements: currentElementTypeState.totalElements,
-      pages: currentElementTypeState.pages,
+      elements: [],
       currentElement: null,
+      type: 'sample',
+      moleculeName: props.moleculeName,
       ui: {
-        checkedIds: currentUIState[props.type].checkedIds,
-        uncheckedIds: currentUIState[props.type].uncheckedIds,
-        checkedAll: currentUIState[props.type].checkedAll,
-        currentId: currentUIState[props.type].currentId,
-        showPreviews: currentUIState.showPreviews,
-        numberOfResults: currentUIState.numberOfResults,
+        numberOfResults: props.perPage
       }
     }
   }
 
   componentDidMount() {
-    UIStore.getState();
     ElementStore.listen(this.onChange.bind(this));
     UIStore.listen(this.onChangeUI.bind(this));
-    this.initializePagination();
   }
 
   componentWillUnmount() {
@@ -49,9 +33,8 @@ export default class ElementsTable extends React.Component {
     UIStore.unlisten(this.onChangeUI.bind(this));
   }
 
-  initializePagination() {
-    const type = this.props.type;
-    const {page, pages, perPage, totalElements} = this.state;
+  setPagination(state) {
+    const {page, pages, perPage, totalElements} = state;
 
     this.setState({
       page, pages, perPage, totalElements
@@ -59,33 +42,34 @@ export default class ElementsTable extends React.Component {
   }
 
   onChangeUI(state) {
-    let {checkedIds, uncheckedIds, checkedAll} = state[this.props.type];
+    const {type, moleculeName} = this.state;
+    let {checkedIds, uncheckedIds, checkedAll} = state[type];
 
     // check if element details of any type are open at the moment
     let currentId = state.sample.currentId || state.reaction.currentId || state.wellplate.currentId;
+    let numberOfResults = state[moleculeName] && state[moleculeName].numberOfResults;
 
-    if (checkedIds || uncheckedIds || checkedAll || currentId || state.showPreviews) {
+    if (checkedIds || uncheckedIds || checkedAll || currentId) {
       this.setState({
         ui: {
           checkedIds: checkedIds,
           uncheckedIds: uncheckedIds,
           checkedAll: checkedAll,
           currentId: currentId,
-          showPreviews: state.showPreviews,
-          numberOfResults: state.numberOfResults
+          numberOfResults: numberOfResults
         }
       });
     }
   }
 
   onChange(state) {
-    const {type} = this.props;
-    let elementsState = state.elements[type];
+    const {moleculeName, type} = this.state;
+    let elementsState = state.elements[moleculeName];
 
     const {elements, page, pages, perPage, totalElements} = elementsState;
 
     let currentElement;
-    if(!state.currentElement || state.currentElement.type == this.props.type) {
+    if(!state.currentElement || state.currentElement.type == type) {
       currentElement = state.currentElement
     }
 
@@ -95,24 +79,26 @@ export default class ElementsTable extends React.Component {
     if (elementsDidChange) {
       this.setState({
         elements, page, pages, perPage, totalElements, currentElement
-      }),
-      () => this.initializePagination()
+      })
     }
     else if (currentElementDidChange) {
       this.setState({
         page, pages, perPage, totalElements, currentElement
-      }),
-      () => this.initializePagination()
+      })
     }
   }
 
   handlePaginationSelect(event, selectedEvent) {
-    const {pages} = this.state;
-    const {type} = this.props;
+    const {pages, type, moleculeName} = this.state;
+
     if(selectedEvent.eventKey > 0 && selectedEvent.eventKey <= pages) {
       this.setState({
         page: selectedEvent.eventKey
-      }, () => UIActions.setPagination({type, page: this.state.page}));
+      }, () => UIActions.setPagination({
+        type: type,
+        moleculeName: moleculeName,
+        page: this.state.page
+      }));
     }
   }
 
@@ -132,27 +118,22 @@ export default class ElementsTable extends React.Component {
     }
   }
 
-  previewCheckbox() {
-    const {ui} = this.state;
-    const {type} = this.props;
-    if(type == 'sample' || type == 'reaction' ) {
-      return <ElementsSvgCheckbox checked={ui.showPreviews}/>
-    }
-  }
-
   handleNumberOfResultsChange(event) {
     const value = event.target.value;
-    const {type} = this.props;
+    const {type, moleculeName} = this.state;
+
+    // TODO spezialfall für molecule container
     UIActions.changeNumberOfResultsShown({
-      value: value
+      value: value,
+      moleculeName: moleculeName
     });
     ElementActions.refreshElements({
       type: type,
-      moleculeName: null
+      moleculeName: moleculeName
     });
   }
 
-  numberOfResultsDropdown() {
+  numberOfResultsInput() {
     let {ui} = this.state;
     return (
       <Input className="number-shown-select" onChange={event => this.handleNumberOfResultsChange(event)} label="Show:" type="text" bsSize="small" value={ui.numberOfResults} />
@@ -161,28 +142,23 @@ export default class ElementsTable extends React.Component {
 
   render() {
     const {elements, ui, currentElement} = this.state;
-    const {overview, type} = this.props;
+    const {overview} = this.props;
 
     return (
       <div>
         <Table className="elements" bordered hover>
-          <thead>
-            <th className="check">
-              <ElementAllCheckbox type={type} checked={ui.checkedAll}/>
-            </th>
-            <th colSpan={3}>
-              All {type}s
-            </th>
-          </thead>
-          <ElementsTableEntries elements={elements} currentElement={currentElement} showDragColumn={!overview} ui={ui}/>
+          <SamplesByMoleculeTableEntries
+            elements={elements}
+            currentElement={currentElement}
+            showDragColumn={!overview}
+            ui={ui}/>
         </Table>
         <table width="100%">
           <tr>
             <td width="70%">{this.pagination()}</td>
-            <td width="30%">{this.numberOfResultsDropdown()}</td>
+            <td width="30%">{this.numberOfResultsInput()}</td>
           </tr>
         </table>
-        {this.previewCheckbox()}
       </div>
     );
   }

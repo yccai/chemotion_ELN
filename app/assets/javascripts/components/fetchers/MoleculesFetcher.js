@@ -1,4 +1,5 @@
 import 'whatwg-fetch';
+import BaseFetcher from './BaseFetcher';
 
 export default class MoleculesFetcher {
   static fetchByMolfile(molfile) {
@@ -21,5 +22,13 @@ export default class MoleculesFetcher {
     });
 
     return promise;
+  }
+
+  static fetchMoleculeNames() {
+    return BaseFetcher.withoutBodyData({
+      apiEndpoint: '/api/v1/molecules/names/',
+      requestMethod: 'GET',
+      responseTranformation: (response) => { return response.json() }
+    });
   }
 }
