@@ -51,6 +51,9 @@ gem 'axlsx'
 # Import of elements from XLS and CSV file
 gem 'roo'
 
+# S3
+gem 's3'
+
 # Chemrails
 gem 'httparty'
 gem 'chemrails', git: 'git://github.com/cominch/chemrails'
