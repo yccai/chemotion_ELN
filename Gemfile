@@ -51,6 +51,9 @@ gem 'axlsx'
 # Import of elements from XLS and CSV file
 gem 'roo'
 
+# Environment Variables
+gem 'dotenv-rails', :groups => [:development, :test]
+
 # S3
 gem 's3'
 
