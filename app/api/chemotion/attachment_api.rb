@@ -10,6 +10,8 @@ module Chemotion
 
           if File.exist?(thumbnail_path)
             Base64.encode64(File.open(thumbnail_path, 'rb').read)
+          elsif thumbnail = S3_BUCKET.objects.find(thumbnail_path)
+            thumbnail.content
           else
             nil
           end

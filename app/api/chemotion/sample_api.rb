@@ -122,6 +122,9 @@ module Chemotion
               FileUtils.cp(tempfile.path, upload_path)
               thumbnail_path = Thumbnailer.create(upload_path)
               FileUtils.mv(thumbnail_path, File.join('uploads', 'thumbnails', "#{file_id}.png"))
+              #object = S3_BUCKET.objects.build("#{file_id}#{File.extname(tempfile)}")
+              #object.content = tempfile.read
+              #object.save
             ensure
               tempfile.close
               tempfile.unlink   # deletes the temp file
@@ -142,7 +145,10 @@ module Chemotion
         content_type "application/octet-stream"
         header['Content-Disposition'] = "attachment; filename=#{filename}"
         env['api.format'] = :binary
-        File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
+        path = File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")
+        #File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
+        #S3_BUCKET.objects.find("#{file_id}#{File.extname(filename)}").content
+        AttachmentManager::AttachmentManager.download(path)
       end
 
       module SampleUpdator
