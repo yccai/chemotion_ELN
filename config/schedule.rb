@@ -23,5 +23,5 @@ end
 # Learn more: http://github.com/javan/whenever
 
 every :hour do
-  runner "AttachmentManager::AttachmentManager.upload"
+  runner "AttachmentManager.upload"
 end

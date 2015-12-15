@@ -148,7 +148,7 @@ module Chemotion
         path = File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")
         #File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
         #S3_BUCKET.objects.find("#{file_id}#{File.extname(filename)}").content
-        AttachmentManager::AttachmentManager.download(path)
+        AttachmentManager.download(path)
       end
 
       module SampleUpdator
