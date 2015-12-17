@@ -57,8 +57,6 @@ gem 'dotenv-rails', :groups => [:development, :test]
 # S3
 gem 's3'
 
-gem 'whenever', :require => false
-
 # Chemrails
 gem 'httparty'
 gem 'chemrails', git: 'git://github.com/cominch/chemrails'
