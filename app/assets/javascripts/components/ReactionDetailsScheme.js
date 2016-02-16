@@ -8,6 +8,7 @@ import ReactionDetailsMainProperties from './ReactionDetailsMainProperties';
 
 import ElementActions from './actions/ElementActions';
 import UsersFetcher from './fetchers/UsersFetcher';
+import NotificationActions from './actions/NotificationActions'
 
 export default class ReactionDetailsScheme extends Component {
   constructor(props) {
@@ -25,6 +26,7 @@ export default class ReactionDetailsScheme extends Component {
   dropSample(sample, materialGroup) {
     const {reaction} = this.state;
     const splitSample = sample.buildChild();
+    console.log(sample);
     reaction.addMaterial(splitSample, materialGroup);
     this.onReactionChange(reaction, {schemaChanged: true});
   }
@@ -46,6 +48,7 @@ export default class ReactionDetailsScheme extends Component {
   }
 
   handleMaterialsChange(changeEvent) {
+    console.log("changeEvent.type: " + changeEvent.type);
     switch (changeEvent.type) {
       case 'referenceChanged':
         this.onReactionChange(
@@ -55,6 +58,11 @@ export default class ReactionDetailsScheme extends Component {
       case 'amountChanged':
         this.onReactionChange(
           this.updatedReactionForAmountChange(changeEvent)
+        );
+        break;
+      case 'loadingChanged':
+        this.onReactionChange(
+          this.updatedReactionForLoadingChange(changeEvent)
         );
         break;
       case 'amountTypeChanged':
@@ -82,10 +90,23 @@ export default class ReactionDetailsScheme extends Component {
 
   updatedReactionForAmountChange(changeEvent) {
     let {sampleID, amount} = changeEvent;
+    console.log('updatedReactionForAmountChange called');
     let updatedSample = this.props.reaction.sampleById(sampleID);
 
     // normalize to milligram
     updatedSample.setAmountAndNormalizeToMilligram(amount.value, amount.unit);
+
+    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange.bind(this), updatedSample)
+  }
+
+  updatedReactionForLoadingChange(changeEvent) {
+    console.log('updatedReactionForLoadingChange called');
+    let {sampleID, amountType} = changeEvent;
+    console.log('changeEvent: ');
+    console.log(changeEvent);
+    let updatedSample = this.props.reaction.sampleById(sampleID);
+
+    updatedSample.amountType = amountType;
 
     return this.updatedReactionWithSample(this.updatedSamplesForAmountChange.bind(this), updatedSample)
   }
@@ -108,14 +129,97 @@ export default class ReactionDetailsScheme extends Component {
     return this.updatedReactionWithSample(this.updatedSamplesForEquivalentChange.bind(this), updatedSample)
   }
 
-  updatedSamplesForAmountChange(samples, updatedSample) {
+  calculateEquivalent(referenceMaterial, updatedSample) {
+    let loading = referenceMaterial.residues[0].custom_info.loading;
+    let mass_koef = updatedSample.amount_mg / referenceMaterial.amount_mg;
+    let mwb = updatedSample.molecule.molecular_weight;
+    let mwa = referenceMaterial.molecule.molecular_weight;
+    let mw_diff = mwb - mwa;
+    let equivalent = (1000.0 / loading) * (mass_koef - 1.0) / mw_diff;
+
+
+    if(isNaN(equivalent) || !isFinite(equivalent)){
+      equivalent = 1.0;
+      sample.setAmountAndNormalizeToMilligram(referenceMaterial.amount_value, referenceMaterial.amount_unit);
+    }
+
+    return equivalent;
+  }
+
+  checkMassMolecule(referenceM, updatedS) {
+    let mwb = updatedS.molecule.molecular_weight;
+    let mwa = referenceM.molecule.molecular_weight;
+    let deltaM = mwb - mwa;
+    let massA = referenceM.amount_mg;
+    let mFull = massA + referenceM.amount_mmol * deltaM;
+
+    let massExperimental = updatedS.amount_mg;
+    let errorMsg;
+    if(deltaM > 0) { //expect weight gain
+      if(massExperimental > mFull) {
+        errorMsg = 'Experimental mass value is more than possible \
+                    by 100% conversion! Please check your data.';
+      } else if(massExperimental < massA) {
+        errorMsg = 'Material loss! \
+                  Experimental mass value is less than possible! \
+                  Please check your data.';
+      }
+    } else { //expect weight loss
+      if(massExperimental < mFull) {
+        errorMsg = 'Experimental mass value is less than possible \
+                    by 100% conversion! Please check your data.';
+      }
+    }
+
+    if(errorMsg) {
+      updatedS.error_mass = true;
+      NotificationActions.add({
+        message: errorMsg,
+        level: 'error'
+      });
+    } else {
+      updatedS.error_mass = false;
+    }
+
+    return {
+      mFull: mFull,
+      errorMsg: errorMsg
+    }
+  }
+
+  checkMassPolymer(referenceM, updatedS, massAnalyses) {
+    let equivalent = this.calculateEquivalent(referenceM, updatedS);
+    updatedS.equivalent = equivalent;
+
+    let newAmountMmol;
+    let newLoading;
+
+    if(massAnalyses.errorMsg) {
+      newAmountMmol = referenceM.amount_mmol;
+      newLoading = newAmountMmol / massAnalyses.mFull * 1000.0;
+    } else {
+      newAmountMmol = referenceM.amount_mmol * equivalent;
+      newLoading = newAmountMmol / updatedS.amount_mg * 1000.0;
+    }
+
+    updatedS.residues[0].custom_info.loading = newLoading;
+  }
+
+  updatedSamplesForAmountChange(samples, updatedSample, group) {
     const {referenceMaterial} = this.props.reaction;
     return samples.map((sample) => {
       if (sample.id == updatedSample.id) {
         sample.setAmountAndNormalizeToMilligram(updatedSample.amount_value, updatedSample.amount_unit);
+
         if(referenceMaterial && sample.amountType != 'real') {
           if(!updatedSample.reference && referenceMaterial.amount_value) {
             sample.equivalent = sample.amount_mmol / referenceMaterial.amount_mmol;
+
+            let massAnalyses = this.checkMassMolecule(referenceMaterial, updatedSample);
+            if(updatedSample.contains_residues) {
+              this.checkMassPolymer(referenceMaterial, updatedSample, massAnalyses);
+            }
+
           } else {
             sample.equivalent = 1.0;
           }
@@ -168,7 +272,10 @@ export default class ReactionDetailsScheme extends Component {
   }
 
   updatedReactionWithSample(updateFunction, updatedSample) {
+    console.log('updateFunction');
+    console.log(updateFunction);
     const {reaction} = this.state;
+    console.log(updatedSample);
     reaction.starting_materials = updateFunction(reaction.starting_materials, updatedSample);
     reaction.reactants = updateFunction(reaction.reactants, updatedSample);
     reaction.products = updateFunction(reaction.products, updatedSample);

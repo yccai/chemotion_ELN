@@ -35,9 +35,65 @@ class Material extends Component {
     }
   }
 
+  notApplicableInput(inputsStyle) {
+    return (
+      <td style={inputsStyle}>
+        <Input type="text"
+               value="N / A"
+               disabled={true}
+               />
+      </td>
+    )
+  }
+
+  materialVolume(material, inputsStyle) {
+    if (material.contains_residues)
+      return this.notApplicableInput(inputsStyle);
+    else
+      return(
+        <td style={inputsStyle}>
+          <NumeralInputWithUnits
+            key={material.id}
+            value={material.amount_ml}
+            unit='ml'
+            numeralFormat='0,0.0000'
+            onChange={(amount) => this.handleAmountChange(amount)}
+          />
+        </td>
+      )
+  }
+
+  materialLoading(material, inputsStyle) {
+    if (!material.contains_residues)
+      return this.notApplicableInput(inputsStyle);
+    else {
+      let disabled = this.props.materialGroup == 'products';
+      return(
+        <td style={inputsStyle}>
+          <NumeralInputWithUnits
+            key={material.id}
+            value={material.residues[0].custom_info.loading}
+            unit='mmol/g'
+            numeralFormat='0,0.0000'
+            onChange={(newValue) => this.handleLoadingChange(newValue)}
+            disabled={disabled}
+          />
+        </td>
+      )
+    }
+  }
+
+  checkMassInputBsStyle(material) {
+    if (material.error_mass) {
+      return 'error';
+    } else {
+      return 'success';
+    }
+}
+
   render() {
     const {material, deleteMaterial, isDragging, connectDragSource} = this.props;
-    
+
     let style = {};
     if (isDragging) {
       style.opacity = 0.3;
@@ -93,18 +149,11 @@ class Material extends Component {
           unit='mg'
           numeralFormat='0,0.0000'
           onChange={(amount) => this.handleAmountChange(amount)}
+          bsStyle={this.checkMassInputBsStyle(material)}
         />
       </td>
 
-      <td style={inputsStyle}>
-        <NumeralInputWithUnits
-          key={material.id}
-          value={material.amount_ml}
-          unit='ml'
-          numeralFormat='0,0.0000'
-          onChange={(amount) => this.handleAmountChange(amount)}
-        />
-      </td>
+      {this.materialVolume(material, inputsStyle)}
 
       <td style={inputsStyle}>
         <NumeralInputWithUnits
@@ -115,6 +164,8 @@ class Material extends Component {
           onChange={(amount) => this.handleAmountChange(amount)}
         />
       </td>
+
+      {this.materialLoading(material, inputsStyle)}
 
       <td style={inputsStyle}>
         {this.equivalentOrYield(material)}
@@ -189,6 +240,21 @@ class Material extends Component {
         sampleID: this.materialId(),
         amount: amount
       };
+      this.props.onChange(event);
+    }
+  }
+
+  handleLoadingChange(newValue) {
+    console.log("Material " + this.materialId() + " handleLoadingChange L:" + JSON.stringify(newValue));
+    if(this.props.onChange) {
+      let event = {
+        type: 'loadingChanged',
+        materialGroup: this.props.materialGroup,
+        sampleID: this.materialId(),
+        newValue: newValue
+      };
+      console.log('event');
+      console.log(event);
       this.props.onChange(event);
     }
   }
