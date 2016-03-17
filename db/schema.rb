@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160126113426) do
+ActiveRecord::Schema.define(version: 20160316083518) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -99,6 +99,17 @@ ActiveRecord::Schema.define(version: 20160126113426) do
   end
 
   add_index "delayed_jobs", ["priority", "run_at"], name: "delayed_jobs_priority", using: :btree
+
+  create_table "elemental_compositions", force: :cascade do |t|
+    t.integer  "sample_id",                     null: false
+    t.string   "composition_type",              null: false
+    t.hstore   "data",             default: {}, null: false
+    t.float    "loading"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "elemental_compositions", ["sample_id"], name: "index_elemental_compositions_on_sample_id", using: :btree
 
   create_table "literatures", force: :cascade do |t|
     t.integer  "reaction_id", null: false
@@ -237,7 +248,6 @@ ActiveRecord::Schema.define(version: 20160126113426) do
     t.string   "sample_svg_file"
     t.integer  "user_id"
     t.string   "identifier"
-    t.hstore   "elemental_analyses",  default: {},    null: false
   end
 
   add_index "samples", ["deleted_at"], name: "index_samples_on_deleted_at", using: :btree

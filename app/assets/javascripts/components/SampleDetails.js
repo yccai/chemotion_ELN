@@ -23,7 +23,7 @@ import Aviator from 'aviator';
 import {solventOptions} from './staticDropdownOptions/options';
 import Sample from './models/Sample';
 import PolymerSection from './PolymerSection'
-import ElementalComposition from './ElementalComposition'
+import ElementalCompositionGroup from './ElementalCompositionGroup'
 
 
 export default class SampleDetails extends React.Component {
@@ -607,7 +607,7 @@ export default class SampleDetails extends React.Component {
     } else {
       return (
         <ListGroupItem>
-          <ElementalComposition sample={sample}/>
+          <ElementalCompositionGroup sample={sample}/>
         </ListGroupItem>
       )
     }
