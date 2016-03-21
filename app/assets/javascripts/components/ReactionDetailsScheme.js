@@ -263,12 +263,10 @@ export default class ReactionDetailsScheme extends Component {
             sample.equivalent = 1.0;
           }
         }
-      }
-      else {
+      } else {
+        // calculate equivalent, don't touch real amount
         if(updatedSample.reference) {
-          if(sample.equivalent && sample.amountType != 'real') {
-            sample.setAmountAndNormalizeToMilligram(sample.equivalent * updatedSample.amount_mmol, 'mmol');
-          }
+          sample.equivalent = sample.amount_mmol / referenceMaterial.amount_mmol;
         }
       }
       return sample;
@@ -346,6 +344,7 @@ export default class ReactionDetailsScheme extends Component {
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
               deleteMaterial={(material, materialGroup) => this.deleteMaterial(material, materialGroup)}
               dropSample={(sample, materialGroup) => this.dropSample(sample, materialGroup)}
+              showLoadingColumn={reaction.hasPolymers()}
               onChange={(changeEvent) => this.handleMaterialsChange(changeEvent)}
               />
               <Button onClick={() => this.addSampleToMaterialGroup(reaction, 'starting_materials')}>Add Sample</Button>
@@ -358,6 +357,7 @@ export default class ReactionDetailsScheme extends Component {
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
               deleteMaterial={(material, materialGroup) => this.deleteMaterial(material, materialGroup)}
               dropSample={(sample, materialGroup) => this.dropSample(sample, materialGroup)}
+              showLoadingColumn={reaction.hasPolymers()}
               onChange={(changeEvent) => this.handleMaterialsChange(changeEvent)}
               />
               <Button onClick={() => this.addSampleToMaterialGroup(reaction, 'reactants')}>Add Sample</Button>
@@ -370,6 +370,7 @@ export default class ReactionDetailsScheme extends Component {
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
               deleteMaterial={(material, materialGroup) => this.deleteMaterial(material, materialGroup)}
               dropSample={(sample, materialGroup) => this.dropSample(sample, materialGroup)}
+              showLoadingColumn={reaction.hasPolymers()}
               onChange={(changeEvent) => this.handleMaterialsChange(changeEvent)}
               />
               <Button onClick={() => this.addSampleToMaterialGroup(reaction, 'products')}>Add Sample</Button>
