@@ -49,7 +49,7 @@ export default class MaterialGroup extends Component {
           <th width="10%">ml</th>
           <th width="10%">mmol</th>
           {this.loadingTHead(showLoadingColumn)}
-          <th width="10%">{materialGroup == 'products' ? 'Yield' : 'Equi'}</th>
+          <th width="10%">{materialGroup == 'products' ? 'Yield' : 'Equiv'}</th>
           <th width="5%"></th>
           </tr></thead>
           <tbody>
