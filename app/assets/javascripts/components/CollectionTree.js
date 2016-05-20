@@ -16,6 +16,7 @@ export default class CollectionTree extends React.Component {
   constructor(props) {
     super(props);
     this.state = CollectionStore.getState();
+    this.state.visible = false;
   }
 
   componentDidMount() {
@@ -164,26 +165,59 @@ export default class CollectionTree extends React.Component {
     }
   }
 
-  render() {
-    let extraDiv = [];
-    for (let j=0;j < Xdiv.divCount;j++){
-      let NoName = Xdiv["div"+j];
-      extraDiv.push(<NoName key={"Xdiv"+j} />);
+  toggleTreeView(visible) {
+    this.setState({ visible: visible });
+  }
+
+  contentList() {
+    if(this.state.visible) {
+      let extraDiv = [];
+      for (let j=0;j < Xdiv.divCount;j++){
+        let NoName = Xdiv["div"+j];
+        extraDiv.push(<NoName key={"Xdiv"+j} />);
+      }
+
+      return (
+        <div>
+          <div className="tree-wrapper">
+            {this.lockedSubtrees()}
+            {this.unsharedSubtrees()}
+          </div>
+          <div className="tree-wrapper">
+            {this.sharedSubtrees()}
+          </div>
+          <div className="tree-wrapper">
+            {this.remoteSubtrees()}
+          </div>
+          {extraDiv.map((e)=>{return e;})}
+        </div>
+      )
     }
+  }
+
+  treeTitle() {
+    let {currentCollection} = UIStore.getState();
+
+    if(!currentCollection)
+      return 'Collections'
+    else
+      return 'Current collection: ' + currentCollection.label.toString();
+  }
+
+  render(){
     return (
-      <div>
-        <div className="tree-view">{this.collectionManagementButton()}<div className={"title "} style={{backgroundColor:'white'}}><i className="fa fa-list" /> Collections </div></div>
-        <div className="tree-wrapper">
-          {this.lockedSubtrees()}
-          {this.unsharedSubtrees()}
+      <div className="tree-view-menu">
+        <div className="tree-view">
+          {this.collectionManagementButton()}
+          <div className="title title-main"
+               onClick={() => this.toggleTreeView(!this.state.visible)}>
+            <i className="fa fa-list"
+               style={{marginRight:'5px'}}
+               title="Toggle collections"/>
+            {this.treeTitle()}
+          </div>
         </div>
-        <div className="tree-wrapper">
-          {this.sharedSubtrees()}
-        </div>
-        <div className="tree-wrapper">
-          {this.remoteSubtrees()}
-        </div>
-        {extraDiv.map((e)=>{return e;})}
+        {this.contentList()}
       </div>
     )
   }

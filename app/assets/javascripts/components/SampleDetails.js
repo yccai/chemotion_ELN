@@ -52,10 +52,12 @@ export default class SampleDetails extends React.Component {
   }
 
   componentDidMount() {
+    console.log('SAMPLE DETAILS MOUNTED')
     ElementStore.listen(this.onChange.bind(this));
   }
 
   componentWillUnmount() {
+    console.log('sample details umounted');
     ElementStore.unlisten(this.onChange.bind(this));
   }
 

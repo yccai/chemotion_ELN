@@ -1,3 +1,9 @@
+.tree-view-menu .title-main {
+  background-color: #d9edf7;
+  border: 1px;
+  border-radius: 5px;
+}
+
 #tree-view {
   border-right: 1px solid;
 }

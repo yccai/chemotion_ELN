@@ -13,12 +13,15 @@ export default class CollectionSubtree extends React.Component {
   constructor(props) {
     super(props);
 
+    let state = UIStore.getState();
+    let {currentCollection} = state;
+
     this.state = {
       isRemote: props.isRemote,
       label: props.root.label,
-      selected: false,
-      root: props.root,
-      visible: false
+      selected: currentCollection && currentCollection.id == props.root.id,
+      root: this.props.root,
+      visible: this.isVisible(this.props.root, state)
     }
   }
 
@@ -42,12 +45,15 @@ export default class CollectionSubtree extends React.Component {
   }
 
   componentWillUnmount() {
+    console.log('componentWillUnmount called')
     UIStore.unlisten(this.onChange.bind(this));
   }
 
   onChange(state) {
     if(state.currentCollection) {
       let visible = this.isVisible(this.state.root, state);
+      console.log('visible?')
+      console.log(visible)
 
       if(state.currentCollection.id == this.state.root.id) {
         this.setState({
@@ -73,6 +79,17 @@ export default class CollectionSubtree extends React.Component {
 
   hasChildren() {
     return this.children().length > 0;
+  }
+
+  subtreesWrapper() {
+    if(this.state.visible)
+      return (
+        <ul>
+          {this.subtrees()}
+        </ul>
+      )
+    else
+      return null;
   }
 
   subtrees() {
@@ -154,12 +171,6 @@ export default class CollectionSubtree extends React.Component {
   }
 
   render() {
-    let style;
-
-    if (!this.state.visible) {
-      style = {display: "none"};
-    }
-
     return (
       <div className="tree-view" key={this.state.root.id}>
         {this.takeOwnershipButton()}
@@ -167,9 +178,7 @@ export default class CollectionSubtree extends React.Component {
           {this.expandButton()}
           {this.state.label}
         </div>
-        <ul style={style}>
-          {this.subtrees()}
-        </ul>
+        {this.subtreesWrapper()}
       </div>
     )
   }

@@ -15,6 +15,8 @@ export default class List extends React.Component {
       totalScreenElements: 0,
       currentTab: 1
     }
+    this.onChange = this.onChange.bind(this);
+    this.onChangeUI = this.onChangeUI.bind(this);
   }
 
   _checkedElements(type) {
@@ -28,16 +30,22 @@ export default class List extends React.Component {
   }
 
   componentDidMount() {
-    ElementStore.listen(this.onChange.bind(this));
-    UIStore.listen(this.onChangeUI.bind(this));
+    console.log('LIST MOUNTED')
+    console.log(this)
+    ElementStore.listen(this.onChange);
+    UIStore.listen(this.onChangeUI);
   }
 
   componentWillUnmount() {
-    ElementStore.unlisten(this.onChange.bind(this));
-    UIStore.unlisten(this.onChangeUI.bind(this));
+    console.log('LIST UNMOUNTED')
+    console.log(this)
+    ElementStore.unlisten(this.onChange);
+    UIStore.unlisten(this.onChangeUI);
   }
 
   onChange(state) {
+    console.log('onchange called for the list')
+    console.log(this)
     this.setState({
       totalSampleElements: state.elements.samples.totalElements,
       totalReactionElements: state.elements.reactions.totalElements,
