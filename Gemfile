@@ -107,7 +107,7 @@ group :development, :test do
   # generate icon fonts
   gem 'fontcustom'
 
-  gem 'capistrano', '~> 3.4.0'
+  gem 'capistrano', '3.4.1'
   gem 'capistrano-rvm'
   gem 'capistrano-bundler'
   gem 'capistrano-rails'

@@ -38,7 +38,6 @@
     "uuid": "^2.0.1",
     "whatwg-fetch": "1.0.0"
   },
-  "aliasify": "./aliasifyConfig.js",
   "browserify": {
     "transform": [
       [
@@ -52,9 +51,6 @@
             "transform-object-rest-spread"
           ]
         }
-      ],
-      [
-        "aliasify"
       ]
     ]
   },
