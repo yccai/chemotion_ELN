@@ -19,6 +19,7 @@ import Reaction from '../models/Reaction';
 
 import Wellplate from '../models/Wellplate';
 import Screen from '../models/Screen';
+import Report from '../models/Report';
 
 import _ from 'lodash';
 
@@ -319,6 +320,11 @@ class ElementActions {
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};
+  }
+
+  // -- Report --
+  generateEmptyReport() {
+    return  Report.buildEmpty()
   }
 
   // -- General --

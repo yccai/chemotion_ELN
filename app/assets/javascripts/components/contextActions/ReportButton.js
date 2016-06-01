@@ -1,16 +1,19 @@
 import React from 'react';
 import {Button, Tooltip, OverlayTrigger} from 'react-bootstrap';
-import UIStore from 'components/stores/UIStore';
-import ElementActions from 'components/actions/ElementActions';
 
 export default class ReportButton extends React.Component {
+  createElementOfType(type) {
+    //const {currentCollection} = UIStore.getState();
+    Aviator.navigate(`/collection/all/${type}/new`);
+  }
+
   render() {
     const tooltip = (
       <Tooltip id="report_button">Generate report</Tooltip>
     );
     return (
       <OverlayTrigger placement="bottom" overlay={tooltip}>
-        <Button bsStyle="success" onClick={e => this._splitSelectionAsSubsamples()} >
+        <Button bsStyle="success" onClick={() => this.createElementOfType('report')} >
           <i className="fa fa-cogs"></i>
         </Button>
       </OverlayTrigger>

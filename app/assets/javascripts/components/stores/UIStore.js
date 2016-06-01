@@ -36,6 +36,13 @@ class UIStore {
         currentId: null,
         page: 1
       },
+      report: {
+        checkedAll: false,
+        checkedIds: Immutable.List(),
+        uncheckedIds: Immutable.List(),
+        currentId: null,
+        page: 1
+      },
       showPreviews: true,
       number_of_results: 15,
       currentCollection: null,

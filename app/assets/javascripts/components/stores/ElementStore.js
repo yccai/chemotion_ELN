@@ -46,6 +46,13 @@ class ElementStore {
           page: null,
           pages: null,
           perPage: null
+        },
+        reports: {
+          elements: [],
+          totalElements: 0,
+          page: null,
+          pages: null,
+          perPage: null
         }
       },
       currentElement: null,
@@ -100,7 +107,7 @@ class ElementStore {
       // FIXME ElementStore listens to UIActions?
       handleSetPagination: UIActions.setPagination,
       handleRefreshElements: ElementActions.refreshElements,
-      handleGenerateEmptyElement: [ElementActions.generateEmptyWellplate, ElementActions.generateEmptyScreen, ElementActions.generateEmptySample, ElementActions.generateEmptyReaction],
+      handleGenerateEmptyElement: [ElementActions.generateEmptyWellplate, ElementActions.generateEmptyScreen, ElementActions.generateEmptySample, ElementActions.generateEmptyReaction, ElementActions.generateEmptyReport],
       handleFetchMoleculeByMolfile: ElementActions.fetchMoleculeByMolfile,
       handleDeleteElements: ElementActions.deleteElements,
 

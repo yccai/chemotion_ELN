@@ -60,6 +60,21 @@ const routes = {
       '/:collectionID': 'show'
     },
 
+    '/report': {
+      target: {
+        showOrNew: function(e) {
+          const {reportID} = e.params;
+          UIActions.selectElement({type: 'report', id: reportID})
+
+          if (reportID == 'new') {
+            ElementActions.generateEmptyReport()
+          } else {
+            ElementActions.fetchReportById(reportID);
+          }
+        }
+      },
+      '/:reportID': 'showOrNew'
+    },
 
     '/sample': {
       target: {
