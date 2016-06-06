@@ -64,10 +64,10 @@ const routes = {
       target: {
         show: function(e) {
           const {reportID, collectionID} = e.params;
-          if (reactionID != 'new') {
+          if (reportID != 'new') {
             ElementActions.fetchReportById(reportID); // TBD
           } else {
-            ElementActions.generateEmptyReport()
+            ElementActions.generateEmptyReport();
           }
         }
       },
@@ -103,6 +103,7 @@ const routes = {
           }  else if(reactionID == 'copy') {
             ElementActions.copyReactionFromClipboard(collectionID);
           } else {
+            console.log("build reaction");
             ElementActions.generateEmptyReaction(collectionID)
           }
         },
