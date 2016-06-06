@@ -65,7 +65,7 @@ const routes = {
         show: function(e) {
           const {reportID, collectionID} = e.params;
           if (reactionID != 'new') {
-            ElementActions.fetchReportById(reportID);
+            ElementActions.fetchReportById(reportID); // TBD
           } else {
             ElementActions.generateEmptyReport()
           }

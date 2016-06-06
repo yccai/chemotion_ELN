@@ -6,10 +6,9 @@ import ElementCollectionLabels from './ElementCollectionLabels';
 import ElementAnalysesLabels from './ElementAnalysesLabels';
 import ElementActions from './actions/ElementActions';
 import CollectionActions from './actions/CollectionActions';
-import ReactionDetailsLiteratures from './ReactionDetailsLiteratures';
-import ReactionDetailsAnalyses from './ReactionDetailsAnalyses';
-import ReactionDetailsScheme from './ReactionDetailsScheme';
-import ReactionDetailsProperties from './ReactionDetailsProperties';
+
+import ReportDetailsScheme from './ReportDetailsScheme';
+
 import UIStore from './stores/UIStore';
 import UIActions from './actions/UIActions';
 import SVG from 'react-inlinesvg';
@@ -21,11 +20,14 @@ import XTabName from "./extra/ReactionDetailsXTabName";
 export default class ReportDetails extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    const {report} = props;
+    this.state = {
+      report
+    };
   }
 
   componentDidMount() {
-
+    const {report} = this.state;
   }
 
   render() {
@@ -43,12 +45,38 @@ export default class ReportDetails extends Component {
                   onClick={this.closeDetails.bind(this)}>
             <i className="fa fa-times"></i>
           </Button>
+
           <Row>
             <Col md={3} style={style}>
-              <h3>HAHAH.....</h3>
-
+              <h3>I am the title</h3>
+              <Button>
+                Generate Report
+              </Button>
             </Col>
           </Row>
+
+          <hr/>
+          <Tabs defaultActiveKey={0}>
+            <Tab eventKey={0} title={'Scheme'}>
+              <ReportDetailsScheme
+                report={report}
+                onReportChange={(report, options) => this.handleReportChange(report, options)}
+                />
+            </Tab>
+          </Tabs>
+
+          <hr/>
+          <ButtonToolbar>
+            <Button bsStyle="primary" onClick={() => this.closeDetails()}>
+              Close
+            </Button>
+            <Button bsStyle="warning" onClick={() => this.submitFunction()} disabled={!this.reportIsValid()}>
+              {submitLabel}
+            </Button>
+            <Button bsStyle="default" onClick={() => CollectionActions.downloadReportReprot(report.id)}>
+              Export samples
+            </Button>
+          </ButtonToolbar>
         </Panel>
       </StickyDiv>
     );
