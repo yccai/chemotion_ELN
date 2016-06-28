@@ -86,12 +86,14 @@ class CollectionStore {
   // 'repository' methods; returns a promise
   static findById(collectionId) {
     let state = this.state;
+    console.log(state);
     let roots = state.unsharedRoots.concat(state.sharedRoots).concat(state.remoteRoots).concat(state.lockedRoots);
-
+    console.log(roots);
     let foundCollection = roots.filter((root) => {
+      console.log({root: root.id, collectionId: collectionId});
       return root.id == collectionId;
     }).pop();
-
+    console.log(foundCollection);
     let promise;
 
     // if not loaded already fetch collection from backend

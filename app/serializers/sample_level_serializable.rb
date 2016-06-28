@@ -4,7 +4,8 @@ module SampleLevelSerializable
   included do
     attributes *DetailLevels::Sample.new.base_attributes
     has_one :molecule
-
+    has_many :residues
+    has_many :elemental_compositions
     alias_method :original_initialize, :initialize
 
     def initialize(element, nested_detail_levels)
@@ -29,6 +30,14 @@ module SampleLevelSerializable
             []
           when :analysis_kinds
             nil
+          when :elemental_compositions
+            []
+          when :residues
+            []
+          when :_contains_residues
+            false
+          when :sample_svg_file
+            "loading-bubbles.svg"
           else
             '***'
           end

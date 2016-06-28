@@ -80,6 +80,12 @@ elsif ENV["RAILS_ENV"] == "production"
   gem 'openbabel', '2.3.2.1', github: 'cubuslab/openbabel-gem'
 end
 
+
+group :development, :test do
+    gem 'railroady'
+end
+
+
 group :production do
 
 #  gem 'unicorn'
@@ -131,6 +137,6 @@ end
 
 # Chemotion plugins: lsit your chemotion specific plugin gems here
 
-gem 'scifinding', '0.1.0', github: 'ComPlat/scifinding' , :group => [:plugins,:development,:production]
-
+#gem 'scifinding', '0.1.0', github: 'ComPlat/scifinding' , :group => [:plugins,:development,:production]
+gem 'chemstash', path: '~/shared/chemstash' , group:  [:plugins,:development]
 ####

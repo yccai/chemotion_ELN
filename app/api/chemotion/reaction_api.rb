@@ -68,7 +68,7 @@ module Chemotion
 
       get do
         scope = if params[:collection_id]
-          Collection.belongs_to_or_shared_by(current_user.id).find(params[:collection_id]).reactions
+          Collection.belongs_to_or_shared_by(current_user.id,current_user.group_ids).find(params[:collection_id]).reactions
         else
           Reaction.joins(:collections).where('collections.user_id = ?', current_user.id).uniq
         end.order("created_at DESC")

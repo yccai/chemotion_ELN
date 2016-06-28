@@ -22,18 +22,20 @@ export default class Sample extends Element {
   }
 
   filterSampleData() {
-    let el_c = this.elemental_compositions.find(function(item) {
-      if(item.composition_type == 'formula') {
-        item.id = null;
-        return item;
-      }
-    });
-    this.elemental_compositions = el_c ? [el_c] : [];
-    this.elemental_compositions.push({
-      composition_type: 'found',
-      data: {},
-      description: 'Experimental'
-    });
+    if(this.elemental_compositions) {
+      let el_c = this.elemental_compositions.find(function(item) {
+        if(item.composition_type == 'formula') {
+          item.id = null;
+          return item;
+        }
+      });
+      this.elemental_compositions = el_c ? [el_c] : [];
+      this.elemental_compositions.push({
+        composition_type: 'found',
+        data: {},
+        description: 'Experimental'
+      });
+    }
 
     if(this.contains_residues) { this.setDefaultResidue(); }
   }
@@ -205,6 +207,8 @@ export default class Sample extends Element {
   }
 
   set contains_residues(value) {
+    if(value == "***") return;
+
     this._contains_residues = value;
 
     if(value) {
@@ -546,6 +550,7 @@ export default class Sample extends Element {
   }
 
   get polymer_type() {
+    console.log(this.contains_residues)
     return this.contains_residues
             && this.residues[0].custom_info.polymer_type.toString();
   }

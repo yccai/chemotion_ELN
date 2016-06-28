@@ -1,6 +1,10 @@
 # create initial test user
-u = User.create!(email: 'test@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Test', last_name: 'Ninja')
-
+u  = User.create!(email: 'test1@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Test', last_name: 'Ninja', name_abbreviation: 'N1C')
+u2 = User.create!(email: 'test2@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Test', last_name: 'Ninja2', name_abbreviation: 'N2C')
+u3 = User.create!(email: 'test3@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Test', last_name: 'Ninja3', name_abbreviation: 'N3C')
+g = Group.create!(email: 'group@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Group', last_name: 'Ninja', name_abbreviation: 'GNJ')
+g.users << u << u2 << u3
+g.save!
 # hattori = User.create!(email: 'hattori@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Hattori', last_name: 'Hanzo')
 # momochi = User.create!(email: 'momochi@ninjaconcept.com', password: 'ninjaconcept', password_confirmation: 'ninjaconcept', first_name: 'Momochi', last_name: 'Sandayu')
 #

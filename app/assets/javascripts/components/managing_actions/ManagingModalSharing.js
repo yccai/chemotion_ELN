@@ -1,5 +1,5 @@
 import React from 'react';
-import {Button, Input, Modal} from 'react-bootstrap';
+import {Button, Input} from 'react-bootstrap';
 import Select from 'react-select';
 
 import UIStore from '../stores/UIStore';

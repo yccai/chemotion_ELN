@@ -25,7 +25,13 @@ class Collection < ActiveRecord::Base
   scope :unshared, -> { unlocked.where(is_shared: false) }
   scope :shared, ->(user_id) { unlocked.where('shared_by_id = ? AND is_shared = ?', user_id, true) }
   scope :remote, ->(user_id) { unlocked.where('is_shared = ? AND NOT shared_by_id = ?', true, user_id) }
-  scope :belongs_to_or_shared_by, ->(user_id) { where("user_id = ? OR shared_by_id = ?", user_id, user_id) }
+  scope :belongs_to_or_shared_by, ->(user_id,with_group=false) {
+    if with_group
+      where("user_id = ? OR shared_by_id = ? OR (user_id = ? AND is_locked = false)",  user_id, user_id,with_group) 
+    else
+      where("user_id = ? OR shared_by_id = ?", user_id, user_id)
+    end
+  }
 
   default_scope { ordered }
 

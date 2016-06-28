@@ -21,6 +21,7 @@ class UserStore {
   }
 
   handleFetchCurrentUser(result) {
+    console.log(result);
     this.state.currentUser = result;
   }
 

@@ -1,5 +1,6 @@
 class RemoteCollectionSerializer < ActiveModel::Serializer
-  attributes :id, :label, :descendant_ids, :is_shared, :shared_by_name, :permission_level
+  attributes :id, :label, :descendant_ids, :is_shared, :shared_by_name, :shared_by_name_abbr,
+             :permission_level, :sample_detail_level, :reaction_detail_level, :wellplate_detail_level, :screen_detail_level
 
   has_many :children
 
@@ -13,5 +14,9 @@ class RemoteCollectionSerializer < ActiveModel::Serializer
 
   def shared_by_name
     User.find(object.shared_by_id).name
+  end
+
+  def shared_by_name_abbr
+    User.find(object.shared_by_id).name_abbreviation if object.shared_by_id
   end
 end

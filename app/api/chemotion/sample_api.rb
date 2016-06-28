@@ -79,14 +79,14 @@ module Chemotion
 
       get do
         scope = if params[:collection_id]
-          coll = Collection.belongs_to_or_shared_by(current_user.id)
+          coll = Collection.belongs_to_or_shared_by(current_user.id,current_user.group_ids)
           coll.find(params[:collection_id]).samples
               .includes(:molecule, :residues, :elemental_compositions)
         else
           # All collection
           Sample.for_user(current_user.id).includes(:molecule).uniq
         end.uniq.order("updated_at DESC")
-
+  
         return {molecules: group_by_molecule(paginate(scope))}
       end
 

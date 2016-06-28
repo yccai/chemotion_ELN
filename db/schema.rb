@@ -22,6 +22,87 @@ ActiveRecord::Schema.define(version: 20160627110544) do
     t.string "token", null: false
   end
 
+  create_table "chemstash_chemicals", force: :cascade do |t|
+    t.string   "substance"
+    t.string   "location"
+    t.string   "current_location"
+    t.text     "molfile"
+    t.string   "acronym"
+    t.string   "additional_acronym"
+    t.string   "status"
+    t.string   "cas"
+    t.string   "supplier"
+    t.string   "catalogue_year"
+    t.string   "ordering_number"
+    t.float    "quantity"
+    t.string   "unit"
+    t.float    "price"
+    t.string   "currency",           default: "euro"
+    t.time     "ordered_at"
+    t.string   "bill"
+    t.string   "danger_sign"
+    t.string   "safety_statement"
+    t.string   "risk_statement"
+    t.text     "note"
+    t.hstore   "label"
+    t.integer  "collection_id"
+    t.datetime "created_at",                          null: false
+    t.datetime "updated_at",                          null: false
+  end
+
+  add_index "chemstash_chemicals", ["collection_id"], name: "index_chemstash_chemicals_on_collection_id", using: :btree
+
+  create_table "chemstash_chemicals_molecules", force: :cascade do |t|
+    t.integer "chemstash_chemical_id"
+    t.integer "molecule_id"
+  end
+
+  add_index "chemstash_chemicals_molecules", ["chemstash_chemical_id"], name: "index_chemstash_chemicals_molecules_on_chemstash_chemical_id", using: :btree
+  add_index "chemstash_chemicals_molecules", ["molecule_id"], name: "index_chemstash_chemicals_molecules_on_molecule_id", using: :btree
+
+  create_table "chemstash_chemicals_orders", force: :cascade do |t|
+    t.integer "chemstash_chemical_id"
+    t.integer "chemstash_orders_id"
+    t.integer "sample_id"
+    t.string  "batch_nr"
+  end
+
+  add_index "chemstash_chemicals_orders", ["chemstash_chemical_id"], name: "index_chemstash_chemicals_orders_on_chemstash_chemical_id", using: :btree
+  add_index "chemstash_chemicals_orders", ["chemstash_orders_id"], name: "index_chemstash_chemicals_orders_on_chemstash_orders_id", using: :btree
+  add_index "chemstash_chemicals_orders", ["sample_id"], name: "index_chemstash_chemicals_orders_on_sample_id", using: :btree
+
+  create_table "chemstash_chemicals_statements", id: false, force: :cascade do |t|
+    t.integer "chemstash_chemical_id"
+    t.integer "chemstash_statement_id"
+  end
+
+  add_index "chemstash_chemicals_statements", ["chemstash_chemical_id"], name: "index_chemstash_chemicals_statements_on_chemstash_chemical_id", using: :btree
+  add_index "chemstash_chemicals_statements", ["chemstash_statement_id"], name: "index_chemstash_chemicals_statements_on_chemstash_statement_id", using: :btree
+
+  create_table "chemstash_orders", force: :cascade do |t|
+    t.string   "supplier"
+    t.string   "catalogue_year"
+    t.string   "ordering_number"
+    t.float    "quantity"
+    t.string   "unit"
+    t.float    "price"
+    t.string   "currency",        default: "euro"
+    t.time     "ordered_at"
+    t.string   "ordered_by"
+    t.string   "ordered_for"
+    t.string   "bill"
+    t.datetime "created_at",                       null: false
+    t.datetime "updated_at",                       null: false
+  end
+
+  create_table "chemstash_statements", force: :cascade do |t|
+    t.string   "acronym"
+    t.text     "statement"
+    t.string   "type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "collections", force: :cascade do |t|
     t.integer  "user_id",                                null: false
     t.string   "ancestry"
@@ -111,6 +192,22 @@ ActiveRecord::Schema.define(version: 20160627110544) do
   end
 
   add_index "elemental_compositions", ["sample_id"], name: "index_elemental_compositions_on_sample_id", using: :btree
+
+  create_table "groups_admins", id: false, force: :cascade do |t|
+    t.integer "group_id"
+    t.integer "user_id"
+  end
+
+  create_table "groups_users", id: false, force: :cascade do |t|
+    t.integer "group_id"
+    t.integer "user_id"
+  end
+
+  create_table "lit_references", force: :cascade do |t|
+    t.string   "zotero_itemKey", limit: 20
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "literatures", force: :cascade do |t|
     t.integer  "reaction_id", null: false
@@ -212,6 +309,14 @@ ActiveRecord::Schema.define(version: 20160627110544) do
   add_index "reactions_reactant_samples", ["deleted_at"], name: "index_reactions_reactant_samples_on_deleted_at", using: :btree
   add_index "reactions_reactant_samples", ["reaction_id"], name: "index_reactions_reactant_samples_on_reaction_id", using: :btree
   add_index "reactions_reactant_samples", ["sample_id"], name: "index_reactions_reactant_samples_on_sample_id", using: :btree
+
+  create_table "reactions_references", id: false, force: :cascade do |t|
+    t.integer "reaction_id",  null: false
+    t.integer "reference_id", null: false
+  end
+
+  add_index "reactions_references", ["reaction_id", "reference_id"], name: "index_reactions_references_on_reaction_id_and_reference_id", using: :btree
+  add_index "reactions_references", ["reference_id", "reaction_id"], name: "index_reactions_references_on_reference_id_and_reaction_id", using: :btree
 
   create_table "reactions_starting_material_samples", force: :cascade do |t|
     t.integer  "reaction_id"
@@ -336,6 +441,7 @@ ActiveRecord::Schema.define(version: 20160627110544) do
     t.datetime "deleted_at"
     t.hstore   "counters",                         default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"}, null: false
     t.string   "name_abbreviation",      limit: 3
+    t.string   "type"
   end
 
   add_index "users", ["deleted_at"], name: "index_users_on_deleted_at", using: :btree

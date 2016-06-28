@@ -8,7 +8,7 @@ module Chemotion
           Collection.get_all_collection_for_user(current_user.id)
         end
       end
-      
+
       desc "Return collection by id"
       params do
         requires :id, type: Integer, desc: "Collection id"
@@ -37,7 +37,7 @@ module Chemotion
 
       desc "Return all locked serialized collection roots of current user"
       get :locked do
-        current_user.collections.locked.roots.order('label ASC')
+        current_user.all_collections.locked.roots.order('label ASC')
       end
 
       desc "Return all unshared serialized collection roots of current user"
@@ -52,7 +52,7 @@ module Chemotion
 
       desc "Return all remote serialized collections"
       get :remote_roots, each_serializer: RemoteCollectionSerializer do
-        current_user.collections.remote(current_user.id)
+        current_user.all_collections.remote(current_user.id)
       end
 
       desc "Bulk update and/or create new collections"

@@ -8,20 +8,44 @@ class User < ActiveRecord::Base
   has_one :profile, dependent: :destroy
 
   has_many :collections
+  has_many :sharing_collections, class_name: "Collection", foreign_key: "shared_by_id"
+
   has_many :samples, -> { unscope(:order).distinct }, :through => :collections
   has_many :reactions, through: :collections
   has_many :wellplates, through: :collections
 
   has_many :samples_created, foreign_key: :created_by, class_name: 'Sample'
 
+  has_many :groups_users
+  has_many :groups, through: :groups_users
+
+  has_many :groups_admins
+  #has_many :administrating_users, class_name: "User", through: : groups_admins, foreign_key: :group_id
+  #
+
+
+
   validates_presence_of :first_name, :last_name, allow_blank: false
   validates :name_abbreviation, format: {with: /(\A[a-zA-Z]{1,3}\Z)|(\A[a-zA-Z][a-zA-Z0-9\-_][a-zA-Z]\Z)/,
       message: "can be alphanumeric, middle '_' and '-' are allowed, but leading or trailing digit, '-' and '_' are not."},
-    length: {in: 1..3, message: "1 to 3 characters only"},
+    length: {in: 1..4, message: "1 to 4 characters only"},
     uniqueness:  {message: " has already been taken." }
 
   after_create :create_chemotion_public_collection, :create_all_collection,
                :has_profile
+
+  #todo Cleaning: the 2 following methods are not used. still needed?
+  def group_collections
+    Collection.where("user_id = ? AND is_locked = ?", self.groups.pluck(:id),false)
+  end
+
+  def group_ids
+    self.groups.pluck(:id)
+  end
+
+  def all_collections
+    Collection.where("user_id = ? OR (user_id = ? AND is_locked = ?)", self.id,self.groups.pluck(:id),false)
+  end
 
   def owns_collections?(collections)
     collections.pluck(:user_id).uniq == [id]
@@ -83,4 +107,18 @@ class User < ActiveRecord::Base
   def create_chemotion_public_collection
     Collection.create(user: self, label: 'chemotion.net', is_locked: true)
   end
+end
+
+class Group < User
+  has_many :groups_users , foreign_key: :group_id
+  has_many :users, through: :groups_users
+
+  has_many :groups_admins , foreign_key: :group_id
+  has_many :admins, class_name: "User", through: :groups_admins, foreign_key: :user_id
+
+end
+
+class ServiceAccount < User
+  has_many :groups_admins , foreign_key: :group_id
+  has_many :admins, class_name: "User", through: :groups_admins, foreign_key: :user_id
 end

@@ -61,8 +61,8 @@ class ElementPermissionProxy
 
   def user_collections_for_element
     collection_ids = element.collections.pluck(:id)
-
-    Collection.where("id IN (?) AND user_id = ?", collection_ids, user.id)
+    user_ids = user.groups.pluck(:id) + [user.id]
+    Collection.where("id IN (?) AND user_id IN (?)", collection_ids, user_ids)
   end
 
   def serializer_class_by_element
