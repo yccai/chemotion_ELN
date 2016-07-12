@@ -42,6 +42,56 @@ class Report::ExcelExport
     p.to_stream().read()
   end
 
+  def generate_full_file
+    p = Axlsx::Package.new
+
+    img = File.expand_path('../image1.jpeg', __FILE__)
+
+    p.workbook.styles.fonts.first.name = 'Calibri'
+    p.workbook.add_worksheet(:name => "ChemOffice") do |sheet|
+      header = [""] + @@sample_list.first.attributes.keys
+      # Add header
+      sheet.add_row header
+
+      width = 0
+      files = [] # do not let Tempfile object to be garbage collected
+
+      @@sample_list.compact.each_with_index do |sample, row|
+        svg_path = Rails.root.to_s + '/public' + sample.get_svg_path
+        image_data = get_image_from_svg(svg_path, files)
+        img_src = image_data[:path]
+        sheet.add_image(:image_src => img_src,:noMove => true) do |img|
+          img.width = image_data[:width]
+          img.height = image_data[:height]
+          img.start_at 0, row + 1
+        end
+
+        # 3/4 -> The misterious ratio!
+        # See column explanation below
+        data_hash = [""]
+        (1..header.length - 1).each do |index|
+          key = header[index]
+          data_hash << sample.attributes[key]
+        end
+        sheet.add_row data_hash,
+                      :sz => 12,
+                      :height => image_data[:height] * 3/4
+
+        # Get the biggest image size to set the column
+        if image_data[:width] > width
+          width = image_data[:width]
+        end
+      end
+
+      # 1/8 -> The second misterious ratio (library bug?)
+      # The creator mentioned about this
+      # https://github.com/randym/axlsx/issues/125#issuecomment-16834367
+      sheet.column_info.first.width = width/8
+    end
+
+    p.to_stream().read()
+  end
+
   def get_image_from_svg(svg_path, files)
     image = Magick::Image.read(svg_path) { self.format = 'SVG'; }.first
     image.format = 'png'

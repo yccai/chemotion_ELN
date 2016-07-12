@@ -28,7 +28,10 @@ module Chemotion
           excel.add_sample(sample)
         end
 
-        excel.generate_file
+        # Old generating function
+        # excel.generate_file
+
+        excel.generate_full_file
       end
 
       params do
