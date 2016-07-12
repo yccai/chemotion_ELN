@@ -56,7 +56,10 @@ module Chemotion
           end
         end
 
-        excel.generate_file
+        # Old generating function
+        # excel.generate_file
+
+        excel.generate_full_file
       end
 
       params do
@@ -75,7 +78,10 @@ module Chemotion
           end
         end
 
-        excel.generate_file
+        # Old generating function
+        # excel.generate_file
+
+        excel.generate_full_file
       end
 
       params do
@@ -95,7 +101,10 @@ module Chemotion
           end
         end
 
-        excel.generate_file
+        # Old generating function
+        # excel.generate_file
+
+        excel.generate_full_file
       end
 
       params do
@@ -120,7 +129,10 @@ module Chemotion
           excel.add_sample(product)
         end
 
-        excel.generate_file
+        # Old generating function
+        # excel.generate_file
+
+        excel.generate_full_file
       end
     end
 

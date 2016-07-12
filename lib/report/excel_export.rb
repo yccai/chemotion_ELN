@@ -49,6 +49,10 @@ class Report::ExcelExport
 
     p.workbook.styles.fonts.first.name = 'Calibri'
     p.workbook.add_worksheet(:name => "ChemOffice") do |sheet|
+      if @@sample_list.empty? || @@sample_list.first == nil
+        break
+      end
+
       header = [""] + @@sample_list.first.attributes.keys
       # Add header
       sheet.add_row header
