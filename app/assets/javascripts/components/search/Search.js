@@ -1,7 +1,7 @@
 import alt from 'alt';
 import React from 'react';
 import AutoCompleteInput from './AutoCompleteInput';
-import {Glyphicon, ButtonGroup, Button, DropdownButton, MenuItem}
+import {Glyphicon, ButtonGroup, Button, DropdownButton, MenuItem, FormGroup, Radio}
   from 'react-bootstrap';
 import Select from 'react-select'
 
@@ -95,20 +95,25 @@ export default class Search extends React.Component {
     if (molfile) {
       this.setState({queryMolfile: molfile});
     }
+    // Check if blank molfile
+    let molfileLines = molfile.match(/[^\r\n]+/g);
+    // If the first character ~ num of atoms is 0, we will not search
+    if (molfileLines[1].trim()[0] != 0) {
+      let userState = UserStore.getState()
+      let uiState = UIStore.getState()
 
-    let userState = UserStore.getState()
-    let uiState = UIStore.getState()
+      this.structureSearch(this.state.elementType, molfile,
+                           userState.currentUser.id,
+                           uiState.currentCollection.id)
 
-    this.structureSearch(this.state.elementType, molfile,
-      userState.currentUser.id, uiState.currentCollection.id)
+      let autoComplete = this.refs.autoComplete
+      autoComplete.setState({
+        value : 'Structure Filter',
+        inputDisabled : true
+      })
+    }
 
     this.hideStructureEditor()
-
-    let autoComplete = this.refs.autoComplete
-    autoComplete.setState({
-      value : 'Structure Filter',
-      inputDisabled : true
-    })
   }
 
   handleStructureEditorCancel() {
@@ -140,6 +145,14 @@ export default class Search extends React.Component {
         </Button>
       </ButtonGroup>
 
+    // let rightDropDown =
+    //   <DropdownButton id="btn-search-dropdown" title="Choose"
+    //                   onSelect={this.handleSelect}>
+    //     <MenuItem eventKey="1">Similar Search</MenuItem>
+    //     <MenuItem eventKey="2">Substructure Search</MenuItem>
+    //     <MenuItem eventKey="3">Exact Search</MenuItem>
+    //   </DropdownButton>
+
     let inputAttributes = {
       placeholder: 'IUPAC, InChI, SMILES, ...',
       style: {
@@ -170,6 +183,7 @@ export default class Search extends React.Component {
             onCancel={this.handleStructureEditorCancel.bind(this)}
             molfile={this.state.queryMolfile}
             rightBtnText="Search"
+            //rightDropDown={rightDropDown}
           />
         </div>
         <div className="search-autocomplete">

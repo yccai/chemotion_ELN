@@ -77,7 +77,7 @@ export default class ReportContainer extends Component {
             </Button>
           </div>
 
-          <Tabs defaultActiveKey={0} >
+          <Tabs defaultActiveKey={0} id="ReportContainerTabs">
             <Tab eventKey={0} title={"Setting"}>
               <CheckBoxs  items={this.state.settings}
                           toggleCheckbox={this.toggleSettings}

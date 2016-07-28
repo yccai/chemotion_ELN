@@ -112,17 +112,23 @@ module Chemotion
         when 'substring'
           AllElementSearch.new(arg, current_user.id).search_by_substring
         when 'structure'
-          is_part = arg.include? ' R# '
+          if arg.include? ' R# '
+            lines = arg.split "\n"
+            lines[4..-1].each do |line|
+              break if line.match /(M.+END+)/
+              line.gsub! ' R# ', ' R1  ' # replace residues with Hydrogens
+            end
+            molfile = lines.join "\n"
+          else
+            molfile = arg
+          end
           fp_vector =
-            Chemotion::OpenBabelService.fingerprint_from_molfile(arg, is_part)
+            Chemotion::OpenBabelService.fingerprint_from_molfile(molfile)
 
           # TODO implement this: http://pubs.acs.org/doi/abs/10.1021/ci600358f
 
           Sample.for_user(current_user.id)
-                .joins(:molecule)
-                .merge(
-                  Molecule.by_tanimoto_coefficient(fp_vector)
-                )
+                .by_fingerprint(fp_vector, params[:page])
         end
 
         scope = scope.by_collection_id(collection_id.to_i)

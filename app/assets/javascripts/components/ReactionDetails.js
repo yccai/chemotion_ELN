@@ -52,7 +52,7 @@ export default class ReactionDetails extends Component {
     let uiState = UIStore.getState();
     UIActions.deselectAllElements();
     ElementActions.deselectCurrentReaction();
-    Aviator.navigate(`/collection/${uiState.currentCollectionId}`);
+    Aviator.navigate(`/collection/${uiState.currentCollection.id}`);
   }
 
   updateReactionSvg() {
@@ -148,7 +148,7 @@ export default class ReactionDetails extends Component {
            </Tab>
      );
     return(
-        <Tabs defaultActiveKey={0}>
+        <Tabs defaultActiveKey={0} id="reactionProductAnalysesTabs">
           {tabs}
         </Tabs>
     )
@@ -227,7 +227,7 @@ export default class ReactionDetails extends Component {
             {this.reactionSVG(reaction, svgContainerStyle)}
           </Row>
           <hr/>
-          <Tabs defaultActiveKey={0}>
+          <Tabs defaultActiveKey={0} id="reactionTabs">
             <Tab eventKey={0} title={'Scheme'}>
               <ReactionDetailsScheme
                 reaction={reaction}

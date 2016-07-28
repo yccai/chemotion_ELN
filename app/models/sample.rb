@@ -42,6 +42,13 @@ class Sample < ActiveRecord::Base
   # scopes for suggestions
   scope :by_name, ->(query) { where('name ILIKE ?', "%#{query}%") }
   scope :by_short_label, ->(query) { where('short_label ILIKE ?',"%#{query}%") }
+  scope :by_fingerprint, -> (fp_vector,
+                             page,
+                             threshold = 0.5) {
+    fp_ids = Fingerprint.by_tanimoto_coefficient(fp_vector, page, threshold)
+    molecule_ids = Molecule.where(fingerprint_id: fp_ids).pluck(:id)
+    where(molecule_id: molecule_ids)
+  }
   scope :with_reactions, -> {
     sample_ids = ReactionsProductSample.pluck(:sample_id) + ReactionsReactantSample.pluck(:sample_id) + ReactionsStartingMaterialSample.pluck(:sample_id)
     where(id: sample_ids)
