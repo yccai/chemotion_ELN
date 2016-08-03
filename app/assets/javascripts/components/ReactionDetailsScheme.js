@@ -17,7 +17,10 @@ export default class ReactionDetailsScheme extends Component {
   constructor(props) {
     super(props);
     let {reaction} = props;
-    this.state = { reaction };
+    this.state = {
+      reaction: reaction,
+      isLockEq: false
+    };
   }
 
   componentWillReceiveProps(nextProps) {
@@ -44,6 +47,7 @@ export default class ReactionDetailsScheme extends Component {
       if(materialGroup == 'products') {splitSample.reaction_product = true }
     }
     reaction.addMaterial(splitSample, materialGroup);
+    this.setState({isLockEq: false})
 
     this.onReactionChange(reaction, {schemaChanged: true});
   }
@@ -129,7 +133,7 @@ export default class ReactionDetailsScheme extends Component {
     // normalize to milligram
     updatedSample.setAmountAndNormalizeToGram(amount);
 
-    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange.bind(this), updatedSample)
+    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange(), updatedSample)
   }
 
   updatedReactionForLoadingChange(changeEvent) {
@@ -138,7 +142,7 @@ export default class ReactionDetailsScheme extends Component {
 
     updatedSample.amountType = amountType;
 
-    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange.bind(this), updatedSample)
+    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange(), updatedSample)
   }
 
   updatedReactionForAmountTypeChange(changeEvent) {
@@ -147,7 +151,15 @@ export default class ReactionDetailsScheme extends Component {
 
     updatedSample.amountType = amountType;
 
-    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange.bind(this), updatedSample)
+    return this.updatedReactionWithSample(this.updatedSamplesForAmountChange(), updatedSample)
+  }
+
+  updatedSamplesForAmountChange() {
+    return(
+      this.state.isLockEq
+      ? this.updatedSamplesForAmountChangeWithLockEquiv.bind(this)
+      : this.updatedSamplesForAmountChangeWithoutLockEquiv.bind(this)
+    )
   }
 
   updatedReactionForEquivalentChange(changeEvent) {
@@ -267,7 +279,7 @@ export default class ReactionDetailsScheme extends Component {
     updatedS.residues[0].custom_info.loading = newLoading;
   }
 
-  updatedSamplesForAmountChange(samples, updatedSample, materialGroup) {
+  updatedSamplesForAmountChangeWithoutLockEquiv(samples, updatedSample, materialGroup) {
     const {referenceMaterial} = this.props.reaction;
     return samples.map((sample) => {
       if (sample.id == updatedSample.id) {
@@ -298,6 +310,23 @@ export default class ReactionDetailsScheme extends Component {
         sample.equivalent = 0.0;
       }
 
+      return sample;
+    });
+  }
+
+  updatedSamplesForAmountChangeWithLockEquiv(samples, updatedSample, materialGroup) {
+    const {referenceMaterial} = this.props.reaction;
+    updatedSample.setAmountAndNormalizeToGram({value:updatedSample.amount_value, unit:updatedSample.amount_unit});
+    const updatedEquiv = updatedSample.equivalent
+    const updatedMass = updatedSample.amount_value
+    const updatedMolWeight = updatedSample.molecule_molecular_weight
+
+    return samples.map((sample) => {
+      const valueInGram = sample.equivalent * updatedMass * sample.molecule_molecular_weight / updatedMolWeight / updatedEquiv
+      if(!sample.reaction_product) {
+        sample.amountType = 'target'
+        sample.setAmountAndNormalizeToGram({value:valueInGram, unit:'g'});
+      }
       return sample;
     });
   }
@@ -348,11 +377,13 @@ export default class ReactionDetailsScheme extends Component {
   }
 
   updatedReactionWithSample(updateFunction, updatedSample) {
-    const {reaction} = this.state;
+    const {reaction, isLockEq} = this.state;
     reaction.starting_materials = updateFunction(reaction.starting_materials, updatedSample, 'starting_materials');
     reaction.reactants = updateFunction(reaction.reactants, updatedSample, 'reactants');
     reaction.solvents = updateFunction(reaction.solvents, updatedSample, 'solvents');
-    reaction.products = updateFunction(reaction.products, updatedSample, 'products');
+    if(!isLockEq) {
+      reaction.products = updateFunction(reaction.products, updatedSample, 'products');
+    }
     return reaction;
   }
 
@@ -365,6 +396,40 @@ export default class ReactionDetailsScheme extends Component {
       reaction,
       materialGroup
     });
+  }
+
+  lockButton() {
+    return (
+      <Button active
+              onClick={() => this.toggleLock()}
+              className="button-inline-right"
+              bsStyle={this.state.isLockEq ? 'info' : 'warning'}>
+        {this.state.isLockEq ? <i className="fa fa-lock"/> : <i className="fa fa-unlock "/>} Equiv
+      </Button>
+    )
+  }
+
+  toggleLock() {
+    const nextLockStatus = this.allNonZeroEquiv() ? !this.state.isLockEq : false
+    this.setState({isLockEq: nextLockStatus})
+  }
+
+  allNonZeroEquiv() {
+    const {reaction} = this.state
+    const samples = reaction.starting_materials.concat(reaction.reactants).concat(reaction.solvents) // no luck for products
+    let allNonZero = true
+    samples.map((sample) => {
+      if(!(sample.equivalent > 0)) {
+        allNonZero = false;
+      }
+    })
+    if(!allNonZero) {
+      NotificationActions.add({
+        message: 'All  Equiv/Yield must be larger than 0.',
+        level: 'error'
+      });
+    }
+    return allNonZero
   }
 
   render() {
@@ -405,11 +470,12 @@ export default class ReactionDetailsScheme extends Component {
       <div>
         <ListGroup fill>
           <ListGroupItem>
-            <h4 className="list-group-item-heading" >{addSampleButton('starting_materials')}&nbsp;Starting Materials </h4>
+            <h4 className="list-group-item-heading" >{addSampleButton('starting_materials')}&nbsp;Starting Materials {this.lockButton()}</h4>
 
             <MaterialGroupContainer
               materialGroup="starting_materials"
               materials={reaction.starting_materials}
+              isLockEq={this.state.isLockEq}
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
               deleteMaterial={(material, materialGroup) => this.deleteMaterial(material, materialGroup)}
               dropSample={(sample, materialGroup) => this.dropSample(sample, materialGroup)}
@@ -422,6 +488,7 @@ export default class ReactionDetailsScheme extends Component {
             <MaterialGroupContainer
               materialGroup="reactants"
               materials={reaction.reactants}
+              isLockEq={this.state.isLockEq}
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
               deleteMaterial={(material, materialGroup) => this.deleteMaterial(material, materialGroup)}
               dropSample={(sample, materialGroup) => this.dropSample(sample, materialGroup)}
@@ -435,6 +502,7 @@ export default class ReactionDetailsScheme extends Component {
             <MaterialGroupContainer
               materialGroup="products"
               materials={reaction.products}
+              isLockEq={this.state.isLockEq}
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
               deleteMaterial={(material, materialGroup) => this.deleteMaterial(material, materialGroup)}
               dropSample={(sample, materialGroup) => this.dropSample(sample, materialGroup)}

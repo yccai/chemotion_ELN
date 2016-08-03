@@ -61,6 +61,7 @@ export default class Material extends Component {
             metricPrefixes = {['milli','none','micro']}
             precision={3}
             onChange={(amount) => this.handleAmountChange(amount)}
+            disabled={this.isProductAndLockEq()}
           />
         </td>
       )
@@ -73,7 +74,6 @@ export default class Material extends Component {
     } else if (!material.contains_residues)
       return this.notApplicableInput(inputsStyle);
     else {
-      let disabled = this.props.materialGroup == 'products';
       return(
         <td style={inputsStyle}>
           <NumeralInputWithUnitsCompo
@@ -84,7 +84,7 @@ export default class Material extends Component {
             metricPrefixes={['none']}
             bsStyle={material.error_loading ? 'error' : 'success'}
             precision={3}
-            disabled={disabled}
+            disabled={this.isProduct()}
             onChange={(loading) => this.handleLoadingChange(loading)}
           />
         </td>
@@ -109,7 +109,7 @@ export default class Material extends Component {
       paddingRight: 5
     };
 
-    if(this.props.materialGroup == 'products')
+    if(this.isProduct())
       material.amountType = 'real';//always take real amount for product
 
     return (
@@ -120,7 +120,7 @@ export default class Material extends Component {
   }
 
   equivalentOrYield(material) {
-    if(this.props.materialGroup == 'products') {
+    if(this.isProduct()) {
       return (
         <FormControl type="text"
           value={`${((material.equivalent || 0 ) * 100).toFixed(0)} %`}
@@ -132,7 +132,7 @@ export default class Material extends Component {
         <NumeralInputWithUnitsCompo
           precision={4}
           value={material.equivalent}
-          disabled={(material.reference && material.equivalent) !== false}
+          disabled={(material.reference && material.equivalent) !== false  || this.props.isLockEq}
           onChange={(e) => this.handleEquivalentChange(e)}
         />
       );
@@ -261,7 +261,6 @@ export default class Material extends Component {
   generalMaterial(props, style, handleStyle, inputsStyle) {
     const {material, deleteMaterial, isDragging, connectDragSource,
            showLoadingColumn } = props;
-    const isTarget = material.amountType === 'target'
 
     return (
       <tr style={style}>
@@ -282,7 +281,7 @@ export default class Material extends Component {
           {this.materialNameWithIupac(material)}
         </td>
         <td>
-          {this.switchTargetReal(isTarget)}
+          {this.switchTargetReal()}
         </td>
 
         <td style={inputsStyle}>
@@ -295,6 +294,7 @@ export default class Material extends Component {
             precision={5}
             onChange={(amount) => this.handleAmountChange(amount)}
             bsStyle={material.error_mass ? 'error' : 'success'}
+            disabled={this.isProductAndLockEq()}
           />
         </td>
 
@@ -308,7 +308,7 @@ export default class Material extends Component {
             metricPrefix='milli'
             metricPrefixes = {['milli','none']}
             precision={4}
-            disabled={this.props.materialGroup == 'products'}
+            disabled={this.isProduct()}
             onChange={(amount) => this.handleAmountChange(amount)}
           />
         </td>
@@ -329,14 +329,9 @@ export default class Material extends Component {
     )
   }
 
-  toggleTarget(isTarget) {
-    this.handleAmountTypeChange(!isTarget ? 'target' : 'real')
-  }
-
   solventMaterial(props, style, handleStyle, inputsStyle) {
     const {material, deleteMaterial, isDragging, connectDragSource,
            showLoadingColumn } = props;
-    const isTarget = material.amountType === 'target'
 
     return (
       <tr style={style}>
@@ -351,7 +346,7 @@ export default class Material extends Component {
           {this.materialNameWithIupac(material)}
         </td>
         <td>
-          {this.switchTargetReal(isTarget)}
+          {this.switchTargetReal()}
         </td>
 
         <td style={inputsStyle}>
@@ -391,13 +386,34 @@ export default class Material extends Component {
     )
   }
 
-  switchTargetReal(isTarget) {
+  isProduct() {
+    return this.props.materialGroup == 'products'
+  }
+
+  isProductAndLockEq() {
+    return this.isProduct() && this.props.isLockEq
+  }
+
+  displayTarget() {
+    const isTarget = this.props.material.amountType === 'target'
+    const isLockEq = this.props.isLockEq
+    return this.isProduct() ? false : isTarget || isLockEq
+  }
+
+  toggleTarget() {
+    const displayTarget = this.displayTarget()
+    this.handleAmountTypeChange(!displayTarget ? 'target' : 'real')
+  }
+
+  switchTargetReal() {
+    const displayTarget = this.displayTarget()
     return (
       <Button active
               style={{padding: '6px'}}
-              onClick={() => this.toggleTarget(isTarget)}
-              bsStyle={isTarget ? 'success' : 'primary'}>
-        {isTarget ? "T" : "R"}
+              onClick={() => this.toggleTarget()}
+              bsStyle={displayTarget ? 'success' : 'primary'}
+              disabled={this.isProduct() || this.props.isLockEq} >
+        {displayTarget ? "T" : "R"}
       </Button>
     )
   }
@@ -442,5 +458,6 @@ Material.propTypes = {
   deleteMaterial: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   showLoadingColumn: PropTypes.func,
-  solventsVolSum: PropTypes.number.isRequired
+  solventsVolSum: PropTypes.number.isRequired,
+  isLockEq: PropTypes.bool.isRequired
 };

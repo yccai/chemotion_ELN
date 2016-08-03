@@ -5,7 +5,7 @@ import {Table} from 'react-bootstrap';
 
 export default class MaterialGroup extends Component {
   render() {
-    const {materials, materialGroup, deleteMaterial, onChange, showLoadingColumn} = this.props;
+    const {materials, materialGroup, deleteMaterial, onChange, showLoadingColumn, isLockEq} = this.props;
     let contents = [];
     let solventsVolSum = 0.0;
 
@@ -29,6 +29,7 @@ export default class MaterialGroup extends Component {
           showLoadingColumn={showLoadingColumn}
           deleteMaterial={material => deleteMaterial(material, materialGroup)}
           solventsVolSum={solventsVolSum}
+          isLockEq={isLockEq}
           />)
       );
 
@@ -107,5 +108,6 @@ const SolventsMaterialGroup = ({contents}) => {
 MaterialGroup.propTypes = {
   materialGroup: PropTypes.string.isRequired,
   materials: PropTypes.array.isRequired,
-  deleteMaterial: PropTypes.func.isRequired
+  deleteMaterial: PropTypes.func.isRequired,
+  isLockEq: PropTypes.bool.isRequired
 };
