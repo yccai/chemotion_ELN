@@ -143,6 +143,8 @@ end
 
 # Chemotion plugins: lsit your chemotion specific plugin gems here
 
-#gem 'scifinding', '0.1.0', git: 'https://github.com/ComPlat/scifinding' , :group => [:plugins,:development,:production]
+#gem 'scifinding', '0.1.2', git: 'https://github.com/ComPlat/scifinding', :group => [:plugins,:development,:production]
 
+# nmr simulation
+gem "nmr_sim", git: 'https://github.com/ComPlat/nmr_sim', :group => [:plugins,:development,:production]
 ####
