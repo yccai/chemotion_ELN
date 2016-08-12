@@ -1,4 +1,20 @@
 GIT
+  remote: git://github.com/ComPlat/nmr_sim.git
+  revision: ce0fe4a799c3d64e60d862f68b2b3b8a8664a141
+  specs:
+    nmr_sim (0.0.1)
+      rails (~> 4.2)
+
+GIT
+  remote: git://github.com/ComPlat/scifinding.git
+  revision: 5cdda928ee246dea352b1d1f84d80878fc4df0f0
+  specs:
+    scifinding (0.1.2)
+      attr_encrypted (= 3.0.1)
+      oauth2
+      rails (>= 4.2.0)
+
+GIT
   remote: https://github.com/ComPlat/ketcher-rails
   revision: ede7340b3028d02dfe6eee5a6abee22af9f4e673
   specs:
@@ -89,6 +105,8 @@ GEM
     archive-zip (0.7.0)
       io-like (~> 0.3.0)
     arel (6.0.3)
+    attr_encrypted (3.0.1)
+      encryptor (~> 3.0.0)
     autoprefixer-rails (6.3.6)
       execjs
     awesome_print (1.6.1)
@@ -189,6 +207,7 @@ GEM
     dotenv-rails (2.1.1)
       dotenv (= 2.1.1)
       railties (>= 4.0, < 5.1)
+    encryptor (3.0.0)
     enumerable-lazy (0.0.1)
     equalizer (0.0.11)
     erubis (2.7.0)
@@ -263,6 +282,7 @@ GEM
     jquery-ui-rails (5.0.5)
       railties (>= 3.2.16)
     json (1.8.3)
+    jwt (1.5.6)
     kaminari (0.16.3)
       actionpack (>= 3.0.0)
       activesupport (>= 3.0.0)
@@ -301,6 +321,12 @@ GEM
     net-ssh (3.1.1)
     nokogiri (1.6.7.2)
       mini_portile2 (~> 2.0.0.rc2)
+    oauth2 (1.2.0)
+      faraday (>= 0.8, < 0.10)
+      jwt (~> 1.0)
+      multi_json (~> 1.3)
+      multi_xml (~> 0.5)
+      rack (>= 1.2, < 3)
     open4 (1.3.4)
     orm_adapter (0.5.0)
     paperclip (5.0.0)
@@ -509,6 +535,7 @@ DEPENDENCIES
   ketcherails!
   launchy (~> 2.4.3)
   mailcatcher
+  nmr_sim!
   nokogiri
   openbabel (= 2.3.2.1)!
   paranoia (~> 2.0)
@@ -522,6 +549,7 @@ DEPENDENCIES
   rtf
   sablon!
   sass-rails (~> 5.0)
+  scifinding (= 0.1.2)!
   sdoc (~> 0.4.0)
   selenium-webdriver (~> 2.53.4)
   spring
