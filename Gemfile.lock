@@ -13,6 +13,13 @@ GIT
       sprite-factory
 
 GIT
+  remote: git://github.com/ComPlat/nmr_sim.git
+  revision: d014bce10ff57447fa0bda26ec2802961f8472f8
+  specs:
+    nmr_sim (0.0.1)
+      rails (~> 4.2)
+
+GIT
   remote: git://github.com/ComPlat/sablon.git
   revision: 03130357d526230e36647a0d5d348ed3c5a51d42
   specs:
@@ -520,6 +527,7 @@ DEPENDENCIES
   ketcherails!
   launchy (~> 2.4.3)
   mailcatcher
+  nmr_sim!
   nokogiri
   openbabel (= 2.3.2.1)!
   paranoia (~> 2.0)
