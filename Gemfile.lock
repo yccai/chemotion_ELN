@@ -51,6 +51,14 @@ GIT
   specs:
     thumbnailer (0.2.0)
 
+PATH
+  remote: ../lit
+  specs:
+    lit (0.0.1)
+      bibtex-ruby
+      oauth
+      rails (~> 4.2.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -110,6 +118,8 @@ GEM
       coderay (>= 1.0.0)
       erubis (>= 2.6.6)
       rack (>= 0.9.0)
+    bibtex-ruby (4.4.0)
+      latex-decode (~> 0.0)
     binding_of_caller (0.7.2)
       debug_inspector (>= 0.0.1)
     bootstrap-kaminari-views (0.0.5)
@@ -274,6 +284,8 @@ GEM
     kaminari (0.16.3)
       actionpack (>= 3.0.0)
       activesupport (>= 3.0.0)
+    latex-decode (0.2.2)
+      unicode (~> 0.4)
     launchy (2.4.3)
       addressable (~> 2.3)
     listen (2.10.1)
@@ -309,6 +321,7 @@ GEM
     net-ssh (3.1.1)
     nokogiri (1.6.7.2)
       mini_portile2 (~> 2.0.0.rc2)
+    oauth (0.5.1)
     open4 (1.3.4)
     orm_adapter (0.5.0)
     paperclip (5.0.0)
@@ -452,6 +465,7 @@ GEM
       thread_safe (~> 0.1)
     uglifier (3.0.0)
       execjs (>= 0.3.0, < 3)
+    unicode (0.4.4.2)
     virtus (1.0.5)
       axiom-types (~> 0.1)
       coercible (~> 1.0)
@@ -519,6 +533,7 @@ DEPENDENCIES
   kaminari
   ketcherails!
   launchy (~> 2.4.3)
+  lit!
   mailcatcher
   nokogiri
   openbabel (= 2.3.2.1)!

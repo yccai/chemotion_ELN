@@ -143,4 +143,6 @@ end
 
 #gem 'scifinding', '0.1.0', github: 'ComPlat/scifinding' , :group => [:plugins,:development,:production]
 
+gem 'lit', path: '../lit' , :group => [:plugins,:development,:production]
+
 ####
