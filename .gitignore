@@ -14,6 +14,7 @@
 
 .ruby-gemset
 .ruby-version
+.coveralls.yml
 .nvmrc
 .env
 /config/database.yml
@@ -32,6 +33,16 @@
 /uploads/thumbnails
 !/public/attachments/.keep
 
+/coverage/
+
+# Temp files
+/spec/tmp/*
+
+# Temp rake task file
+.rake_tasks~
+
+# Byebug history
+.byebug_history
 
 #config generated files
 aliasifyConfig.js
@@ -39,6 +50,7 @@ aliasifyConfig.js
 
 # Backups folder
 backup/deploy_backup
+backup/weekly_backup
 
 #mc
 .DS_Store

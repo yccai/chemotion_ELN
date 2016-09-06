@@ -3,7 +3,7 @@ require 'rails_helper'
 describe Chemotion::SampleAPI do
 
   context 'authorized user logged in' do
-    let(:user)  { create(:user) }
+    let(:user)  { create(:person) }
 
     before do
       allow_any_instance_of(WardenAuthentication).to receive(:current_user).and_return(user)
@@ -198,14 +198,14 @@ describe Chemotion::SampleAPI do
 
       it 'returns serialized (unshared) samples roots of logged in user' do
         get '/api/v1/samples'
-
-        samples = JSON.parse(response.body)['samples']
-        expect(samples.first.symbolize_keys).to include(
+        first_sample = JSON.parse(response.body)['molecules'].first['samples'].first
+        expect(first_sample.symbolize_keys).to include(
           id: s.id,
           name: s.name,
           type: 'sample',
-          collection_labels: [{"name" => 'C1', "is_shared" => false}]
+          #collection_labels: [{"name" => 'C1', "is_shared" => false, "id"=>c.id}]
         )
+        expect(first_sample["collection_labels"]).to include({"name" => 'C1', "is_shared" => false, "id"=>c.id})
       end
     end
 
@@ -221,7 +221,7 @@ describe Chemotion::SampleAPI do
             solvent: '',
             impurities: '',
             location: '',
-            molecule: FactoryGirl.create(:molecule),
+          #  molecule: FactoryGirl.create(:molecule),
             molfile: '',
             is_top_secret: false
           }

@@ -12,15 +12,16 @@ export default class UserAuth extends Component {
     this.state = {
       currentUser: props.currentUser || {name: 'unknown'}
     }
+    this.onChange = this.onChange.bind(this)
   }
 
   componentDidMount() {
-    UserStore.listen(this.onChange.bind(this));
+    UserStore.listen(this.onChange);
     UserActions.fetchCurrentUser();
   }
 
   componentWillUnmount() {
-    UserStore.unlisten(this.onChange.bind(this));
+    UserStore.unlisten(this.onChange);
   }
 
   onChange(state) {
@@ -46,12 +47,24 @@ export default class UserAuth extends Component {
     const style = {
       marginRight: '5px'
     };
+
+    let templatesLink;
+    if(this.state.currentUser.is_templates_moderator) {
+      templatesLink = (
+        <MenuItem eventKey="2" href="ketcher/common_templates">
+          Common Templates
+        </MenuItem>
+      );
+    }
+
     return (
       <Nav navbar pullRight>
         <NavDropdown title={`Log in as ${this.state.currentUser.name}`} id="bg-nested-dropdown">
           <MenuItem eventKey="1" href="pages/settings" >Account settings</MenuItem>
+          {templatesLink}
           <MenuItem eventKey="2" href="users/edit" >Change Password</MenuItem>
           <MenuItem eventKey="3" href="pages/profiles" >Change profiles</MenuItem>
+          <MenuItem eventKey="4" href="pages/groups" >My groups</MenuItem>
         </NavDropdown>
         <NavItem onClick={() => this.logout()} style={style} className='' title='Log out'> <Glyphicon glyph="log-out" /> </NavItem>
       </Nav>

@@ -27,20 +27,24 @@ class ElementActions {
 
   // -- Search --
 
-  fetchBasedOnSearchSelectionAndCollection(selection, collectionId, currentPage) {
-    return (dispatch) => { SearchFetcher.fetchBasedOnSearchSelectionAndCollection(selection, collectionId, currentPage)
+  fetchBasedOnSearchSelectionAndCollection(selection, collectionId,
+      currentPage, searchType = null, isSync=false) {
+    return (dispatch) => {
+      SearchFetcher.fetchBasedOnSearchSelectionAndCollection(
+        selection, collectionId, currentPage, searchType, isSync)
       .then((result) => {
         dispatch(result);
       }).catch((errorMessage) => {
         console.log(errorMessage);
-      });};
+      })
+    }
   }
 
   // -- Collections --
 
 
-  fetchReactionsByCollectionId(id, queryParams={}) {
-    return (dispatch) => { ReactionsFetcher.fetchByCollectionId(id, queryParams)
+  fetchReactionsByCollectionId(id, queryParams={}, collectionIsSync = false) {
+    return (dispatch) => { ReactionsFetcher.fetchByCollectionId(id, queryParams, collectionIsSync)
       .then((result) => {
         dispatch(result);
       }).catch((errorMessage) => {
@@ -68,8 +72,8 @@ class ElementActions {
     return null;
   }
 
-  fetchSamplesByCollectionId(id, queryParams={}) {
-    return (dispatch) => { SamplesFetcher.fetchByCollectionId(id, queryParams)
+  fetchSamplesByCollectionId(id, queryParams={}, collectionIsSync = false) {
+    return (dispatch) => { SamplesFetcher.fetchByCollectionId(id, queryParams, collectionIsSync)
       .then((result) => {
         dispatch(result);
       }).catch((errorMessage) => {
@@ -205,8 +209,8 @@ class ElementActions {
 
   // -- Reactions SVGs --
 
-  fetchReactionSvgByMaterialsSvgPaths(materialsSvgPaths, label){
-    return (dispatch) => { ReactionSvgFetcher.fetchByMaterialsSvgPaths(materialsSvgPaths, label)
+  fetchReactionSvgByMaterialsSvgPaths(materialsSvgPaths, temperature, solvents){
+    return (dispatch) => { ReactionSvgFetcher.fetchByMaterialsSvgPaths(materialsSvgPaths, temperature, solvents)
       .then((result) => {
         dispatch(result.reaction_svg);
       }).catch((errorMessage) => {
@@ -264,8 +268,8 @@ class ElementActions {
       });};
   }
 
-  fetchWellplatesByCollectionId(id, queryParams={}) {
-    return (dispatch) => { WellplatesFetcher.fetchByCollectionId(id, queryParams)
+  fetchWellplatesByCollectionId(id, queryParams={}, collectionIsSync = false) {
+    return (dispatch) => { WellplatesFetcher.fetchByCollectionId(id, queryParams, collectionIsSync)
       .then((result) => {
         dispatch(result);
       }).catch((errorMessage) => {
@@ -290,8 +294,8 @@ class ElementActions {
   }
 
 
-  fetchScreensByCollectionId(id, queryParams={}) {
-    return (dispatch) => { ScreensFetcher.fetchByCollectionId(id, queryParams)
+  fetchScreensByCollectionId(id, queryParams={}, collectionIsSync = false) {
+    return (dispatch) => { ScreensFetcher.fetchByCollectionId(id, queryParams, collectionIsSync)
       .then((result) => {
         dispatch(result);
       }).catch((errorMessage) => {
@@ -394,7 +398,8 @@ class ElementActions {
   updateElementsCollection(params) {
     return (dispatch) => { CollectionsFetcher.updateElementsCollection(params)
       .then(() => {
-        dispatch(params);UIActions.uncheckWholeSelection();
+        dispatch(params);
+        UIActions.uncheckWholeSelection();
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};
@@ -403,7 +408,8 @@ class ElementActions {
   assignElementsCollection(params) {
     return (dispatch) => { CollectionsFetcher.assignElementsCollection(params)
       .then(() => {
-        dispatch(params);UIActions.uncheckWholeSelection();
+        dispatch(params);
+        UIActions.uncheckWholeSelection();
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};
@@ -412,7 +418,8 @@ class ElementActions {
   removeElementsCollection(params) {
     return (dispatch) => { CollectionsFetcher.removeElementsCollection(params)
       .then(() => {
-        dispatch(params);UIActions.uncheckWholeSelection();
+        dispatch(params);
+        UIActions.uncheckWholeSelection();
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};

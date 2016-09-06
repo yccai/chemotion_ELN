@@ -3,10 +3,11 @@ require 'rails_helper'
 describe Chemotion::MoleculeAPI do
 
   context 'authorized user logged in' do
-    let(:user)  { create(:user) }
+    let(:user)  { create(:person) }
 
     before do
-      allow_any_instance_of(WardenAuthentication).to receive(:current_user).and_return(user)
+      allow_any_instance_of(WardenAuthentication).to(
+        receive(:current_user).and_return(user))
     end
 
     describe 'POST /api/v1/molecules' do
@@ -43,11 +44,11 @@ M  END"
         let!(:params) {
           {
             inchistring: "InChI=1S/C8H8/c1-2-5-3(1)7-4(1)6(2)8(5)7/h1-8H",
-            molecule_svg_file: "TXWRERCHRDBNLG-UHFFFAOYSA-N.svg",
+            #molecule_svg_file: "TXWRERCHRDBNLG-UHFFFAOYSA-N.svg",
             inchikey: "TXWRERCHRDBNLG-UHFFFAOYSA-N",
             molecular_weight: 104.14912,
             sum_formular: "C8H8",
-            iupac_name: "cubane", 
+            iupac_name: "cubane",
             names: ["cubane"],
           }
         }
@@ -61,7 +62,7 @@ M  END"
           params.each do |k, v|
             expect(m.attributes.symbolize_keys[k]).to eq(v)
           end
-
+          expect(m.molecule_svg_file).to match(/\w{128}\.svg/)
         end
 
       end

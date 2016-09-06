@@ -8,7 +8,7 @@ module Chemotion
           Collection.get_all_collection_for_user(current_user.id)
         end
       end
-      
+
       desc "Return collection by id"
       params do
         requires :id, type: Integer, desc: "Collection id"
@@ -26,7 +26,7 @@ module Chemotion
         end
         route_param :id do
           before do
-            error!('401 Unauthorized', 401) unless CollectionPolicy.new(@current_user, Collection.find(params[:id])).take_ownership?
+            error!('401 Unauthorized', 401) unless CollectionPolicy.new(current_user, Collection.find(params[:id])).take_ownership?
           end
 
           post do
@@ -35,24 +35,24 @@ module Chemotion
         end
       end
 
-      desc "Return all locked serialized collection roots of current user"
+      desc "Return all locked and unshared serialized collection roots of current user"
       get :locked do
-        current_user.collections.locked.roots.order('label ASC')
+        current_user.collections.locked.unshared.roots.order('label ASC')
       end
 
-      desc "Return all unshared serialized collection roots of current user"
+      desc "Return all unlocked unshared serialized collection roots of current user"
       get :roots do
-        current_user.collections.ordered.unshared.roots
+        current_user.collections.ordered.unlocked.unshared.roots
       end
 
       desc "Return all shared serialized collections"
       get :shared_roots do
-        Collection.shared(current_user.id)
+        Collection.shared(current_user.id).roots.includes(:user)
       end
 
       desc "Return all remote serialized collections"
-      get :remote_roots, each_serializer: RemoteCollectionSerializer do
-        current_user.collections.remote(current_user.id)
+      get :remote_roots, each_serializer: CollectionRemoteSerializer do
+        current_user.all_collections.remote(current_user.id).roots
       end
 
       desc "Bulk update and/or create new collections"
@@ -64,20 +64,17 @@ module Chemotion
         desc "Update shared collection"
         params do
           requires :id, type: Integer
-          requires :permission_level, type: Integer
-          requires :sample_detail_level, type: Integer
-          requires :reaction_detail_level, type: Integer
-          requires :wellplate_detail_level, type: Integer
-          requires :screen_detail_level, type: Integer
+          requires :collection_attributes, type: Hash do
+            requires :permission_level, type: Integer
+            requires :sample_detail_level, type: Integer
+            requires :reaction_detail_level, type: Integer
+            requires :wellplate_detail_level, type: Integer
+            requires :screen_detail_level, type: Integer
+          end
         end
+
         put ':id' do
-          Collection.find(params[:id]).update({
-            permission_level: params[:permission_level],
-            sample_detail_level: params[:sample_detail_level],
-            reaction_detail_level: params[:reaction_detail_level],
-            wellplate_detail_level: params[:wellplate_detail_level],
-            screen_detail_level: params[:screen_detail_level]
-          })
+          Collection.shared(current_user.id).find(params[:id]).update!(params[:collection_attributes])
         end
 
         desc "Create shared collections"
@@ -116,16 +113,18 @@ module Chemotion
             requires :sample_detail_level, type: Integer
             requires :reaction_detail_level, type: Integer
             requires :wellplate_detail_level, type: Integer
+            requires :screen_detail_level, type: Integer
           end
           requires :user_ids, type: Array
           optional :current_collection_id, type: Integer
         end
 
         before do
-          samples = Sample.for_user(current_user.id).for_ui_state(params[:elements_filter][:sample])
-          reactions = Reaction.for_user(current_user.id).for_ui_state(params[:elements_filter][:reaction])
-          wellplates = Wellplate.for_user(current_user.id).for_ui_state(params[:elements_filter][:wellplate])
-          screens = Screen.for_user(current_user.id).for_ui_state(params[:elements_filter][:screen])
+
+          samples = Sample.for_user_n_groups(user_ids).for_ui_state(params[:elements_filter][:sample])
+          reactions = Reaction.for_user_n_groups(user_ids).for_ui_state(params[:elements_filter][:reaction])
+          wellplates = Wellplate.for_user_n_groups(user_ids).for_ui_state(params[:elements_filter][:wellplate])
+          screens = Screen.for_user_n_groups(user_ids).for_ui_state(params[:elements_filter][:screen])
 
           top_secret_sample = samples.pluck(:is_top_secret).any?
           top_secret_reaction = reactions.flat_map(&:samples).map(&:is_top_secret).any?
@@ -158,68 +157,69 @@ module Chemotion
         put do
 
           ui_state = params[:ui_state]
-          current_collection_id = ui_state[:currentCollectionId]
+          current_collection_id = ui_state[:currentCollection].id
           collection_id = params[:collection_id]
+          unless Collection.find(collection_id).is_shared
+            sample_ids = Sample.for_user(current_user.id).for_ui_state_with_collection(
+              ui_state[:sample],
+              CollectionsSample,
+              current_collection_id
+            )
 
-          sample_ids = Sample.for_user(current_user.id).for_ui_state_with_collection(
-            ui_state[:sample],
-            CollectionsSample,
-            current_collection_id
-          )
+            CollectionsSample.where(
+              sample_id: sample_ids,
+              collection_id: current_collection_id
+            ).delete_all
 
-          CollectionsSample.where(
-            sample_id: sample_ids,
-            collection_id: current_collection_id
-          ).delete_all
+            sample_ids.map { |id|
+              CollectionsSample.find_or_create_by(sample_id: id, collection_id: collection_id)
+            }
 
-          sample_ids.map { |id|
-            CollectionsSample.find_or_create_by(sample_id: id, collection_id: collection_id)
-          }
+            reaction_ids = Reaction.for_user(current_user.id).for_ui_state_with_collection(
+              ui_state[:reaction],
+              CollectionsReaction,
+              current_collection_id
+            )
 
-          reaction_ids = Reaction.for_user(current_user.id).for_ui_state_with_collection(
-            ui_state[:reaction],
-            CollectionsReaction,
-            current_collection_id
-          )
+            CollectionsReaction.where(
+              reaction_id: reaction_ids,
+              collection_id: current_collection_id
+            ).delete_all
 
-          CollectionsReaction.where(
-            reaction_id: reaction_ids,
-            collection_id: current_collection_id
-          ).delete_all
+            reaction_ids.map { |id|
+              CollectionsReaction.find_or_create_by(reaction_id: id, collection_id: collection_id)
+            }
 
-          reaction_ids.map { |id|
-            CollectionsReaction.find_or_create_by(reaction_id: id, collection_id: collection_id)
-          }
+            wellplate_ids = Wellplate.for_user(current_user.id).for_ui_state_with_collection(
+              ui_state[:wellplate],
+              CollectionsWellplate,
+              current_collection_id
+            )
 
-          wellplate_ids = Wellplate.for_user(current_user.id).for_ui_state_with_collection(
-            ui_state[:wellplate],
-            CollectionsWellplate,
-            current_collection_id
-          )
+            CollectionsWellplate.where(
+              wellplate_id: wellplate_ids,
+              collection_id: current_collection_id
+            ).delete_all
 
-          CollectionsWellplate.where(
-            wellplate_id: wellplate_ids,
-            collection_id: current_collection_id
-          ).delete_all
+            wellplate_ids.map { |id|
+              CollectionsWellplate.find_or_create_by(wellplate_id: id, collection_id: collection_id)
+            }
 
-          wellplate_ids.map { |id|
-            CollectionsWellplate.find_or_create_by(wellplate_id: id, collection_id: collection_id)
-          }
+            screen_ids = Screen.for_user(current_user.id).for_ui_state_with_collection(
+              ui_state[:screen],
+              CollectionsScreen,
+              current_collection_id
+            )
 
-          screen_ids = Screen.for_user(current_user.id).for_ui_state_with_collection(
-            ui_state[:screen],
-            CollectionsScreen,
-            current_collection_id
-          )
+            CollectionsScreen.where(
+              screen_id: screen_ids,
+              collection_id: current_collection_id
+            ).delete_all
 
-          CollectionsScreen.where(
-            screen_id: screen_ids,
-            collection_id: current_collection_id
-          ).delete_all
-
-          screen_ids.map { |id|
-            CollectionsScreen.find_or_create_by(screen_id: id, collection_id: collection_id)
-          }
+            screen_ids.map { |id|
+              CollectionsScreen.find_or_create_by(screen_id: id, collection_id: collection_id)
+            }
+          end
         end
 
         desc "Assign a collection to a set of elements by UI state"
@@ -230,7 +230,7 @@ module Chemotion
         post do
           ui_state = params[:ui_state]
           collection_id = params[:collection_id]
-          current_collection_id = ui_state[:currentCollectionId]
+          current_collection_id = ui_state[:currentCollection].id
 
           Sample.for_user(current_user.id).for_ui_state_with_collection(
             ui_state[:sample],
@@ -271,7 +271,7 @@ module Chemotion
         end
         delete do
           ui_state = params[:ui_state]
-          current_collection_id = ui_state[:currentCollectionId]
+          current_collection_id = ui_state[:currentCollection].id
 
           sample_ids = Sample.for_ui_state_with_collection(
             ui_state[:sample],

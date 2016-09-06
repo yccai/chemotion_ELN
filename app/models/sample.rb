@@ -16,13 +16,26 @@ class Sample < ActiveRecord::Base
     molecule: :iupac_name
   }
 
+  pg_search_scope :search_by_inchistring, associated_against: {
+    molecule: :inchistring
+  }
+
+  pg_search_scope :search_by_cano_smiles, associated_against: {
+    molecule: :cano_smiles
+  }
+
   pg_search_scope :search_by_sample_name, against: :name
   pg_search_scope :search_by_sample_short_label, against: :short_label
 
   # search scope for substrings
   pg_search_scope :search_by_substring, against: :name,
                                         associated_against: {
-                                          molecule: [:sum_formular, :iupac_name]
+                                          molecule: [
+                                            :sum_formular,
+                                            :iupac_name,
+                                            :inchistring,
+                                            :cano_smiles
+                                          ]
                                         },
                                         using: {trigram: {threshold:  0.0001}}
 
@@ -41,20 +54,56 @@ class Sample < ActiveRecord::Base
   scope :by_reaction_reactant_ids, ->(ids) { joins(:reactions_as_reactant).where('reactions.id in (?)', ids) }
   scope :by_reaction_product_ids,  ->(ids) { joins(:reactions_as_product).where('reactions.id in (?)', ids) }
   scope :by_reaction_material_ids, ->(ids) { joins(:reactions_as_starting_material).where('reactions.id in (?)', ids) }
+  scope :by_reaction_solvent_ids,  ->(ids) { joins(:reactions_as_solvent).where('reactions.id in (?)', ids) }
   scope :not_reactant, -> { where('samples.id NOT IN (SELECT DISTINCT(sample_id) FROM reactions_reactant_samples)') }
+  scope :not_solvents, -> { where('samples.id NOT IN (SELECT DISTINCT(sample_id) FROM reactions_solvent_samples)') }
+
+  scope :search_by_fingerprint, -> (molfile, userid, collection_id,
+                                    type, threshold = 0.01) {
+    fp_vector =
+      Chemotion::OpenBabelService.fingerprint_from_molfile(molfile)
+
+    if (type == 'similar')
+      threshold = threshold.to_f
+      fp_ids = Fingerprint.search_similar(fp_vector, threshold)
+      scope = where(:fingerprint_id => fp_ids)
+      scope = scope.order("position(fingerprint_id::text in '#{fp_ids.join(',')}')")
+    else # substructure search
+      fp_ids = Fingerprint.screen_sub(fp_vector)
+      list_molfile = Sample.where(:fingerprint_id => fp_ids)
+                           .for_user(userid)
+                           .by_collection_id(collection_id.to_i)
+
+      smarts_query = Chemotion::OpenBabelService.get_smiles_from_molfile(molfile)
+
+      sample_ids = []
+      list_molfile.each do |sample|
+        if Chemotion::OpenBabelService.substructure_match(smarts_query, sample.molfile)
+          sample_ids << sample.id
+        end
+
+      end
+      scope = Sample.where(:id => sample_ids)
+    end
+    return scope
+  }
+
 
   has_many :collections_samples, inverse_of: :sample, dependent: :destroy
   has_many :collections, through: :collections_samples
 
   has_many :reactions_starting_material_samples, dependent: :destroy
   has_many :reactions_reactant_samples, dependent: :destroy
+  has_many :reactions_solvent_samples, dependent: :destroy
   has_many :reactions_product_samples, dependent: :destroy
 
   has_many :reactions_as_starting_material, through: :reactions_starting_material_samples, source: :reaction
   has_many :reactions_as_reactant, through: :reactions_reactant_samples, source: :reaction
+  has_many :reactions_as_solvent, through: :reactions_solvent_samples, source: :reaction
   has_many :reactions_as_product, through: :reactions_product_samples, source: :reaction
 
   belongs_to :molecule
+  belongs_to :fingerprints
   belongs_to :user
 
   has_one :well, dependent: :destroy
@@ -62,6 +111,7 @@ class Sample < ActiveRecord::Base
   has_many :residues
   has_many :elemental_compositions
 
+  has_many :sync_collections_users, through: :collections
   composed_of :amount, mapping: %w(amount_value, amount_unit)
 
   before_save :auto_set_molfile_to_molecules_molfile
@@ -81,8 +131,10 @@ class Sample < ActiveRecord::Base
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   validates :creator, presence: true
 
-  before_save :auto_set_short_label, :attach_svg, :init_elemental_compositions,
+  before_save :attach_svg, :init_elemental_compositions,
               :set_loading_from_ea
+
+  before_save :auto_set_short_label, on: :create
 
   after_save :update_data_for_reactions
   after_create :update_counter
@@ -104,9 +156,11 @@ class Sample < ActiveRecord::Base
   end
 
   def auto_set_short_label
+    self.short_label = nil if self.short_label == 'NEW SAMPLE'
+
     if parent
       self.short_label ||= "#{parent.short_label}-#{parent.children.count.to_i + 1}"
-    elsif creator
+    elsif creator && creator.counters['samples']
       self.short_label ||= "#{creator.initials}-#{creator.counters['samples'].succ}"
     elsif
       self.short_label ||= 'NEW'
@@ -122,7 +176,7 @@ class Sample < ActiveRecord::Base
   end
 
   def reactions
-    reactions_as_starting_material + reactions_as_reactant + reactions_as_product
+    reactions_as_starting_material + reactions_as_reactant + reactions_as_solvent + reactions_as_product
   end
 
   #todo: find_or_create_molecule_based_on_inchikey
@@ -182,7 +236,7 @@ class Sample < ActiveRecord::Base
 
   def init_elemental_compositions
     residue = self.residues[0]
-    return unless m_formula = self.molecule.sum_formular
+    return unless m_formula = (self.molecule && self.molecule.sum_formular)
 
     if residue.present? && self.molfile.include?(' R# ')# case when residue will be deleted
       p_formula = residue.custom_info['formula']
@@ -263,6 +317,18 @@ class Sample < ActiveRecord::Base
     (self["#{type}_amount_value"] || 0.0) / (self.molecule.density || 1.0) / divisor
   end
 
+  def preferred_label
+    self.external_label.present? ? self.external_label : self.molecule.iupac_name
+  end
+
+  def preferred_tag
+    if (tag = self.preferred_label) && tag && tag.length > 20
+      tag[0, 20] + "..."
+    else
+      tag
+    end
+  end
+
 private
 
   def has_collections
@@ -305,6 +371,7 @@ private
     end
 
     self.molfile = lines.join
+    self.fingerprint_id = Fingerprint.find_or_create_by_molfile(self.molfile)
   end
 
   def set_loading_from_ea

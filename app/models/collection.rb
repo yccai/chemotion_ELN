@@ -13,6 +13,9 @@ class Collection < ActiveRecord::Base
   has_many :wellplates, through: :collections_wellplates, dependent: :destroy
   has_many :screens, through: :collections_screens, dependent: :destroy
 
+  has_many :sync_collections_users,  foreign_key: :collection_id, dependent: :destroy
+  has_many :shared_users, through: :sync_collections_users, source: :user
+
   # A collection is locked if it is not allowed to rename or rearrange it
   scope :unlocked, -> { where(is_locked: false) }
   scope :locked, -> { where(is_locked: true) }
@@ -22,10 +25,17 @@ class Collection < ActiveRecord::Base
   scope :for_publication, -> { where(label: 'chemotion.net') }
 
   scope :ordered, -> { order("position ASC") }
-  scope :unshared, -> { unlocked.where(is_shared: false) }
-  scope :shared, ->(user_id) { unlocked.where('shared_by_id = ? AND is_shared = ?', user_id, true) }
-  scope :remote, ->(user_id) { unlocked.where('is_shared = ? AND NOT shared_by_id = ?', true, user_id) }
-  scope :belongs_to_or_shared_by, ->(user_id) { where("user_id = ? OR shared_by_id = ?", user_id, user_id) }
+  scope :unshared, -> { where(is_shared: false) }
+  scope :shared, ->(user_id) { where('shared_by_id = ? AND is_shared = ?', user_id, true) }
+  scope :remote, ->(user_id) { where('is_shared = ? AND NOT shared_by_id = ?', true, user_id) }
+  scope :belongs_to_or_shared_by, ->(user_id, with_group = false) do
+    if with_group && !with_group.empty?
+      where("user_id = ? OR shared_by_id = ? OR (user_id IN (?) AND is_locked = false)",
+        user_id, user_id, with_group)
+    else
+      where("user_id = ? OR shared_by_id = ?", user_id, user_id)
+    end
+  end
 
   default_scope { ordered }
 

@@ -1,12 +1,15 @@
 import React, {Component} from 'react';
-import {Button, Popover, Overlay, Table, Input} from 'react-bootstrap';
+import {Button, Popover, Overlay, ControlLabel, FormGroup, FormControl} from 'react-bootstrap';
 import SVG from 'react-inlinesvg';
 import UiStore from './stores/UIStore';
 
 export default class WellOverlay extends Component {
   handleSampleClick(sample) {
-    const uiState = UiStore.getState();
-    Aviator.navigate(`/collection/${uiState.currentCollectionId}/sample/${sample.id}`);
+    const {currentCollection,isSync} = UIStore.getState();
+    Aviator.navigate(isSync
+      ? `/scollection/${currentCollection.id}/sample/${sample.id}`
+      : `/collection/${currentCollection.id}/sample/${sample.id}`
+    );
   }
 
   sampleName() {
@@ -87,7 +90,7 @@ export default class WellOverlay extends Component {
         </span>
       </div>
     );
-  
+
     return (
       <div>
         <Overlay
@@ -102,20 +105,22 @@ export default class WellOverlay extends Component {
               {this.renderWellContent()}
               <div>
                 <hr style={{marginTop: 28, marginBottom: 10}}/>
-                <Input
-                  type="textarea"
-                  label="Readout"
-                  disabled={true}
-                  value={well.readout}
-                  style={{height: 100}}
+                <FormGroup>
+                  <ControlLabel>Readout</ControlLabel>
+                  <FormControl type="textarea"
+                    disabled={true}
+                    value={well.readout || ''}
+                    style={{height: 100}}
                   />
-                <Input
-                  type="textarea"
-                  label="Imported Readout"
-                  disabled={true}
-                  value={this.sampleImportedReadout()}
-                  style={{height: 100}}
+                </FormGroup>
+                <FormGroup>
+                  <ControlLabel>Imported Readout</ControlLabel>
+                  <FormControl type="textarea"
+                    disabled={true}
+                    value={this.sampleImportedReadout() || ''}
+                    style={{height: 100}}
                   />
+                </FormGroup>
               </div>
             </div>
           </Popover>

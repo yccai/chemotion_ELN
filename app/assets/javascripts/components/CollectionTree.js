@@ -1,33 +1,33 @@
 import React from 'react';
-import {Button} from 'react-bootstrap';
-
+import {Button, OverlayTrigger} from 'react-bootstrap';
 import CollectionStore from './stores/CollectionStore';
 import CollectionActions from './actions/CollectionActions';
-
 import CollectionSubtree from './CollectionSubtree';
-
 import UIActions from './actions/UIActions';
 import UIStore from './stores/UIStore';
 import ElementStore from './stores/ElementStore';
-
 import Xdiv from './extra/CollectionTreeXdiv';
+import update from 'react-addons-update';
+import UserInfos from './UserInfos';
 
 export default class CollectionTree extends React.Component {
   constructor(props) {
     super(props);
     this.state = CollectionStore.getState();
+    this.onChange = this.onChange.bind(this)
   }
 
   componentDidMount() {
-    CollectionStore.listen(this.onChange.bind(this));
+    CollectionStore.listen(this.onChange);
     CollectionActions.fetchLockedCollectionRoots();
     CollectionActions.fetchUnsharedCollectionRoots();
     CollectionActions.fetchSharedCollectionRoots();
     CollectionActions.fetchRemoteCollectionRoots();
+    CollectionActions.fetchSyncInCollectionRoots();
   }
 
   componentWillUnmount() {
-    CollectionStore.unlisten(this.onChange.bind(this));
+    CollectionStore.unlisten(this.onChange);
   }
 
   onChange(state) {
@@ -48,50 +48,56 @@ export default class CollectionTree extends React.Component {
   }
 
   sharedSubtrees() {
-    let roots = this.state.sharedRoots;
-
-    let sharedWithLabels = roots.map((root) => {
-      return root.label;
-    }).unique();
-
-    let fakeRoots = sharedWithLabels.map((label) => {
-      return {
-        label: label,
-        id: '',
-        children: [],
-        descendant_ids: []
-      }
+    let labelledRoots = this.state.sharedRoots.map(e=>{
+      return  update(e,{label: {$set: <span>{this.labelRoot('shared_to',e)}</span>}})
     });
-
-    this.assignRootsAsChildrenToFakeRoots(roots, fakeRoots);
-
-    fakeRoots.forEach((root) => {
-      root.label = root.label.replace('project', 'projects');
-    });
-
-    return this.subtrees(fakeRoots, <div className="tree-view"><div className={"title "} style={{backgroundColor:'white'}}><i className="fa fa-list" /> My shared projects <i className="fa fa-share-alt" /></div></div>, false);
+    return this.subtrees(labelledRoots, <div className="tree-view"><div className={"title "} style={{backgroundColor:'white'}}><i className="fa fa-list" /> My shared projects <i className="fa fa-share-alt" /></div></div>, false);
   }
 
   remoteSubtrees() {
-    let roots = this.state.remoteRoots;
-
-    // for unique see below (end of file)
-    let sharedByNames = roots.map((root) => {
-      return root.shared_by_name
-    }).unique();
-
-    let fakeRoots = sharedByNames.map((name) => {
-      return {
-        label: 'From ' + name,
-        id: '',//'from-' + this.convertToSlug(name),
-        children: [],
-        descendant_ids: []
-      }
+    let labelledRoots = this.state.remoteRoots.map(e=>{
+      return  update(e,{label: {$set: <span>
+        {this.labelRoot('shared_by',e)}
+        {' '}
+        {this.labelRoot('shared_to',e)}
+        </span>
+      }})
     });
+    return this.subtrees(labelledRoots, <div className="tree-view"><div
+      className={"title"} style={{backgroundColor:'white'}}>
+      <i className="fa fa-list"/> Shared with me <i className="fa fa-share-alt"/>
+      </div></div>, false)
+  }
 
-    this.assignRootsAsChildrenToFakeRoots(roots, fakeRoots);
+  remoteSyncInSubtrees() {
+    let labelledRoots = this.state.syncInRoots.map(e=>{
+      return  update(e,{label: {$set: <span>
+        {this.labelRoot('shared_by',e)}
+        {' '}
+        {this.labelRoot('shared_to',e)}
+        </span>
+      }})
+    });
+    return this.subtrees(labelledRoots, <div className="tree-view"><div
+      className={"title"} style={{backgroundColor:'white'}}>
+      <i className="fa fa-list"/> Synchronized with me <i className="fa fa-share-alt"/>
+      </div></div>, false)
+  }
 
-    return this.subtrees(fakeRoots, <div className="tree-view"><div className={"title "} style={{backgroundColor:'white'}}><i className="fa fa-list" /> Shared with me <i className="fa fa-share-alt" /></div></div>, true)
+
+  labelRoot(sharedToOrBy,rootCollection){
+    let shared = rootCollection[sharedToOrBy]
+    if (shared){
+      return(
+        <OverlayTrigger placement="bottom" overlay={UserInfos({users:[shared]})}>
+          <span>{sharedToOrBy=='shared_to'?'with':'by'} {shared.initials}</span>
+        </OverlayTrigger>
+      )
+    } else{
+      return(
+        <span></span>
+      )
+    }
   }
 
   convertToSlug(name) {
@@ -101,7 +107,7 @@ export default class CollectionTree extends React.Component {
   assignRootsAsChildrenToFakeRoots(roots, fakeRoots) {
     roots.forEach((root) => {
       let fakeRootForRoot = fakeRoots.filter((fakeRoot) => {
-        return fakeRoot.label == `From ${root.shared_by_name}` || fakeRoot.label == root.label;
+        return fakeRoot.label == `From ${root.shared_by.name}` || fakeRoot.label == root.label;
       })[0];
 
       fakeRootForRoot.children.push(root);
@@ -125,28 +131,29 @@ export default class CollectionTree extends React.Component {
       return <div></div>;
     }
   }
- collectionManagementButton() {
 
-      return  (
-        <div className="take-ownership-btn">
-          <Button bsStyle="danger" bsSize="xsmall" onClick={() => this.handleCollectionManagementToggle()}>
-            <i className="fa fa-cog"></i>
-          </Button>
-        </div>
-      )
-
+  collectionManagementButton() {
+    return  (
+      <div className="take-ownership-btn">
+        <Button bsStyle="danger" bsSize="xsmall" onClick={() => this.handleCollectionManagementToggle()}>
+          <i className="fa fa-cog"></i>
+        </Button>
+      </div>
+    )
   }
 
   handleCollectionManagementToggle() {
     UIActions.toggleCollectionManagement();
-    const {showCollectionManagement, currentCollection} = UIStore.getState();
+    const {showCollectionManagement, currentCollection,isSync} = UIStore.getState();
     if(showCollectionManagement) {
       Aviator.navigate('/collection/management');
     } else {
-      if( currentCollection.label == 'All' ) {
+      if( currentCollection == null || currentCollection.label == 'All' ) {
         Aviator.navigate(`/collection/all/${this.urlForCurrentElement()}`);
       } else {
-        Aviator.navigate(`/collection/${currentCollection.id}/${this.urlForCurrentElement()}`);
+        Aviator.navigate(isSync
+          ? `/scollection/${currentCollection.id}/${this.urlForCurrentElement()}`
+          : `/collection/${currentCollection.id}/${this.urlForCurrentElement()}`);
       }
     }
   }
@@ -183,6 +190,9 @@ export default class CollectionTree extends React.Component {
         </div>
         <div className="tree-wrapper">
           {this.remoteSubtrees()}
+        </div>
+        <div className="tree-wrapper">
+          {this.remoteSyncInSubtrees()}
         </div>
         {extraDiv.map((e)=>{return e;})}
       </div>

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {SplitButton, MenuItem,Input,Button} from 'react-bootstrap';
+import {FormGroup,FormControl, ControlLabel, InputGroup,Button} from 'react-bootstrap';
 import {metPreConv,metPrefSymbols} from './utils/metricPrefix';
 
 export default class NumeralInputWithUnitsCompo extends Component {
@@ -17,7 +17,7 @@ export default class NumeralInputWithUnitsCompo extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    let {value, unit,metricPrefix,precision} = nextProps;
+    let {value, unit} = nextProps;
     this.setState({
       unit: unit,
       value: value,
@@ -36,7 +36,6 @@ export default class NumeralInputWithUnitsCompo extends Component {
     let caretPosition = $(inputField).caret();
     let {value} = inputField;
     let {metricPrefix,valueString} = this.state;
-    let {onChange} = this.props;
     let lastChar =  value[caretPosition-1] || "";
     let md = lastChar.match(/\d/);
     let mc = lastChar.match(/\.|(,)/);
@@ -91,7 +90,7 @@ export default class NumeralInputWithUnitsCompo extends Component {
 
 // TODO fix css-issue with wrong z-index
   render() {
-    let {units, bsSize, bsStyle, disabled,label, key} = this.props;
+    let { bsSize, bsStyle, disabled,label} = this.props;
     let {unit,showString, value,metricPrefix,currentPrecision,valueString} = this.state;
     let mp = metPrefSymbols[metricPrefix];
     let val = ()=>{
@@ -103,24 +102,64 @@ export default class NumeralInputWithUnitsCompo extends Component {
     let prefixSwitch;
     // BsStyle-s for Input and buttonAfter have differences
     let bsStyleBtnAfter = bsStyle == 'error' ? 'danger' : bsStyle;
-    if(unit != 'none')
-       prefixSwitch=<Button active style={ {padding: '6px'}} onClick={() =>{this.togglePrefix()}} bsStyle={bsStyleBtnAfter} bsSize={bsSize}>{mp+unit}</Button>
-
-    return (
-      <div >
-        <Input  key={key} type='text' disabled={disabled} bsSize={bsSize} bsStyle={bsStyle} label={label}
-          value={val()}
-          onChange={(event) => this._handleInputValueChange(event)}
-          onFocus={(event) => this._handleInputValueFocus(event)}
-          onBlur={(event)=>this._handleInputValueBlur(event)}
-          buttonAfter={prefixSwitch}
+    let labelWrap = label ? <ControlLabel>{label}</ControlLabel> : null
+    if(unit != 'none') {
+      prefixSwitch = <InputGroup.Button>
+          <Button active  onClick={() =>{this.togglePrefix()}}
+            bsStyle={bsStyleBtnAfter} bsSize={bsSize} style={{padding:"7px 2px", minWidth: 20}}>
+              {mp+unit}
+          </Button>
+        </InputGroup.Button>
+      return (
+        <div>
+          {labelWrap}
+          <InputGroup>
+            <FormControl type='text'
+              disabled={disabled} bsSize={bsSize} bsStyle={bsStyle}
+              value={val() || ''}
+              onChange={(event) => this._handleInputValueChange(event)}
+              onFocus={(event) => this._handleInputValueFocus(event)}
+              onBlur={(event)=>this._handleInputValueBlur(event)}
+            />
+            {prefixSwitch}
+          </InputGroup>
+        </div>
+      );
+    } else {
+      return(
+        <div>
+          {labelWrap}
+          <FormControl type='text'
+            disabled={disabled} bsSize={bsSize} bsStyle={bsStyle}
+            value={val() || ''}
+            onChange={(event) => this._handleInputValueChange(event)}
+            onFocus={(event) => this._handleInputValueFocus(event)}
+            onBlur={(event)=>this._handleInputValueBlur(event)}
           />
-      </div>
-    );
+        </div>
+      );
+    }
   }
 }
 
+NumeralInputWithUnitsCompo.propTypes = {
+  onChange: React.PropTypes.func,
+  unit: React.PropTypes.string,
+  units: React.PropTypes.array,
+  metricPrefix: React.PropTypes.string,
+  metricPrefixes: React.PropTypes.array,
+  precision: React.PropTypes.number,
+  disabled: React.PropTypes.bool,
+  label: React.PropTypes.node,
+  bsSize: React.PropTypes.string,
+  bsStyle: React.PropTypes.string,
+};
+
 NumeralInputWithUnitsCompo.defaultProps = {
+  unit: 'none',
   value: 0,
-  units: []
+  units: [],
+  disabled: false,
+  bsSize: "small",
+  bsStyle: "default"
 };

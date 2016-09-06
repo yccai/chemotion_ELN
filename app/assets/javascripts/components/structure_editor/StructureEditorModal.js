@@ -7,6 +7,7 @@ import Aviator from 'aviator';
 export default class StructureEditorModal extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       showModal: props.showModal,
       showWarning: props.hasChildren || props.hasParent,
@@ -52,14 +53,14 @@ export default class StructureEditorModal extends React.Component {
     return ketcher.getSVG();
   }
 
-  handleCancel() {
+  handleCancelBtn() {
     this.hideModal();
     if(this.props.onCancel) {
       this.props.onCancel()
     }
   }
 
-  handleSave() {
+  handleSaveBtn() {
     let molfile = this.getMolfileFromEditor()
     let svg_file = this.getSVGFromEditor()
     this.hideModal();
@@ -81,19 +82,37 @@ export default class StructureEditorModal extends React.Component {
     })
   }
   // TODO: can we catch the ketcher on draw event, instead on close button click?
-  // This woul allow us to show molecule information to the user while he draws, e.g. the IUPAC name
+  // This woul allow us to show molecule information to the user while he draws,
+  //  e.g. the IUPAC name
   // and would give a feedback if the structure is valid or not
 
   render() {
     let editorContent = this.state.showWarning ?
-      <WarningBox handleCancel={this.handleCancel.bind(this)}
+      <WarningBox handleCancelBtn={this.handleCancelBtn.bind(this)}
                   hideWarning={this.hideWarning.bind(this)} />
       :
-      <StructureEditor handleCancel={this.handleCancel.bind(this)}
-                       handleSave={this.handleSave.bind(this)} />
+      <StructureEditor
+        handleCancelBtn = { this.handleCancelBtn.bind(this) }
+        handleSaveBtn = { this.handleSaveBtn.bind(this) }
+        cancelBtnText = {
+          this.props.cancelBtnText ? this.props.cancelBtnText : "Cancel"
+        }
+        submitBtnText = {
+          this.props.submitBtnText ? this.props.submitBtnText : "Save"
+        }
+        submitAddons = {
+          this.props.submitAddons ? this.props.submitAddons : ""
+        }
+      />
+
+    let dom_class = this.state.showWarning ? "" : "structure-editor-modal"
     return (
       <div>
-        <Modal dialogClassName="structure-editor" animation show={this.state.showModal} onLoad={this.initializeEditor.bind(this)} onHide={this.handleCancel.bind(this)}>
+        <Modal dialogClassName={dom_class}
+          animation show={this.state.showModal}
+          onLoad={this.initializeEditor.bind(this)}
+          onHide={this.handleCancelBtn.bind(this)}>
+
           <Modal.Header closeButton>
             <Modal.Title>Structure Editor</Modal.Title>
           </Modal.Header>
@@ -106,28 +125,42 @@ export default class StructureEditorModal extends React.Component {
   }
 }
 
-const StructureEditor = ({handleCancel, handleSave}) => {
-  return (
-    <div>
+const StructureEditor =
+  ({handleCancelBtn, handleSaveBtn, cancelBtnText, submitBtnText, submitAddons}) => {
+    return (
       <div>
-        <iframe id="ifKetcher" src="/ketcher"></iframe>
+        <div>
+          <iframe id="ifKetcher" src="/ketcher"></iframe>
+        </div>
+        <div>
+          <ButtonToolbar>
+            <Button bsStyle="warning" onClick={handleCancelBtn}>
+              {cancelBtnText}
+            </Button>
+            <Button bsStyle="primary" onClick={handleSaveBtn}>
+              {submitBtnText}
+            </Button>
+            {submitAddons}
+          </ButtonToolbar>
+        </div>
       </div>
-      <ButtonToolbar>
-        <Button bsStyle="warning" onClick={handleCancel}>Cancel</Button>
-        <Button bsStyle="primary" onClick={handleSave}>Save</Button>
-      </ButtonToolbar>
-    </div>
-  )
-}
+    )
+  }
 
-const WarningBox = ({handleCancel, hideWarning}) => {
+const WarningBox = ({handleCancelBtn, hideWarning}) => {
   return (
     <Panel header="Parents/Descendants will not be changed!" bsStyle="info">
       <p>This sample has parents or descendants, and they will not be changed.</p>
       <p>Are you sure?</p>
       <br />
-      <Button bsStyle="danger" onClick={handleCancel} className="g-marginLeft--10">Cancel</Button>
-      <Button bsStyle="warning" onClick={hideWarning} className="g-marginLeft--10">Continue Editing</Button>
+      <Button bsStyle="danger" onClick={handleCancelBtn}
+        className="g-marginLeft--10">
+        Cancel
+      </Button>
+      <Button bsStyle="warning" onClick={hideWarning}
+        className="g-marginLeft--10">
+        Continue Editing
+      </Button>
     </Panel>
   )
 }

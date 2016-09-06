@@ -17,22 +17,33 @@ import initRoutes from './routes';
 import Notifications from './Notifications';
 
 import UserActions from './actions/UserActions';
+import KeyboardActions from './actions/KeyboardActions';
 
 class App extends Component {
   constructor(props) {
     super();
     this.state= {
-      showCollectionManagement: false
+      showCollectionManagement: false,
+      indicatorClassName: "fa fa-chevron-circle-left",
+      showCollectionTree: true,
+      mainContentClassName: "small-col main-content",
     };
+    this.handleUiStoreChange = this.handleUiStoreChange.bind(this)
+    this.documentKeyDown = this.documentKeyDown.bind(this)
+    this.toggleCollectionTree = this.toggleCollectionTree.bind(this)
   }
 
   componentDidMount() {
-    UIStore.listen(state => this.handleUiStoreChange(state));
+    UIStore.listen(this.handleUiStoreChange);
     UserActions.fetchProfile();
+
+    $(document).on('keydown', this.documentKeyDown);
   }
 
   componentWillUnmount() {
-    UIStore.unlisten(state => this.handleUiStoreChange(state));
+    UIStore.unlisten(this.handleUiStoreChange);
+
+    $(document).off('keydown', this.documentKeyDown);
   }
 
   handleUiStoreChange(state) {
@@ -41,28 +52,73 @@ class App extends Component {
     }
   }
 
-  mainContent() {
-    const {showCollectionManagement} = this.state;
-    if(showCollectionManagement) {
-      return <CollectionManagement/>
-    } else {
-      return <Elements/>
+  documentKeyDown(event) {
+    // Only trigger arrow and Enter keys ON BODY
+    // Ignore on other element
+    if (event.target.tagName.toUpperCase() == 'BODY' &&
+        [13, 38, 39, 40].includes(event.keyCode)) {
+      KeyboardActions.documentKeyDown(event.keyCode)
     }
   }
 
-  render() {
+  toggleCollectionTree() {
+    let {showCollectionTree, indicatorClassName, mainContentClassName} = this.state
+
+    if (showCollectionTree) {
+      indicatorClassName = "fa fa-chevron-circle-right"
+      mainContentClassName = "small-col full-main"
+    } else {
+      indicatorClassName = "fa fa-chevron-circle-left"
+      mainContentClassName = "small-col main-content"
+    }
+
+    this.setState({
+      showCollectionTree: !showCollectionTree,
+      indicatorClassName: indicatorClassName,
+      mainContentClassName: mainContentClassName
+    })
+  }
+
+  collectionTree() {
+    const {showCollectionTree} = this.state
+    if(!showCollectionTree) {
+      return <div />
+    }
+
+    let collectionWidth = 2
+
     return (
-      <Grid border fluid>
-        <Row>
-          <Navigation />
+      <Col className="small-col collec-tree">
+        <CollectionTree />
+      </Col>
+    )
+  }
+
+  mainContent() {
+    const {showCollectionManagement, mainContentClassName} = this.state;
+
+    return (
+      <Col className={mainContentClassName} >
+        {showCollectionManagement ? <CollectionManagement/> : <Elements/>}
+      </Col>
+    )
+  }
+
+  render() {
+    let {collectionWidth} = this.state
+    return (
+      <Grid fluid>
+        <Row className="card-navigation">
+          <Navigation/>
         </Row>
-        <Row>
-          <Col sm={2} md={2} lg={2}>
-            <CollectionTree/>
-          </Col>
-          <Col sm={10} md={10} lg={10}>
-            {this.mainContent()}
-          </Col>
+        <Row className="card-content">
+          <div onClick={this.toggleCollectionTree}
+               style={{float: "left", cursor: "pointer", marginTop: "3px"}}>
+            <i className={this.state.indicatorClassName}
+               style={{marginTop: "7px", marginLeft: "5px"}}/>
+          </div>
+          {this.collectionTree()}
+          {this.mainContent()}
         </Row>
         <Row>
           <Notifications />

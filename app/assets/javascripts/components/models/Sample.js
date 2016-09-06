@@ -150,6 +150,7 @@ export default class Sample extends Element {
   }
 
   static buildReactionSample(collection_id, delta, materialGroup = null, molecule = { id: '_none_'}) {
+    let target_molecule = molecule.molecule == undefined ? molecule : molecule.molecule
     let sample = new Sample({
       collection_id: collection_id,
       type: 'sample',
@@ -163,7 +164,7 @@ export default class Sample extends Element {
       impurities: '',
       location: '',
       molfile: molecule.molfile || '',
-      molecule:  molecule,
+      molecule:  target_molecule,
       analyses: [],
       elemental_compositions: [{
         composition_type: 'found',
@@ -270,6 +271,21 @@ export default class Sample extends Element {
 
   set external_label(label) {
     this._external_label = label;
+  }
+
+  get preferred_label() {
+    return this._external_label ?
+            this._external_label
+            :
+            this.molecule.iupac_name;
+  }
+
+  iupac_name_tag(length) {
+    let iupac_name = this.molecule.iupac_name || "";
+    return iupac_name.length > length ?
+      iupac_name.slice(0, length) + "..."
+      :
+      iupac_name
   }
 
   get location() {
@@ -514,6 +530,10 @@ export default class Sample extends Element {
     return this.molecule && this.molecule.inchistring;
   }
 
+  get molecule_cano_smiles() {
+    return this.molecule && this.molecule.cano_smiles;
+  }
+
   get purity() {
     return this._purity
   }
@@ -539,6 +559,10 @@ export default class Sample extends Element {
   }
 
   get concat_formula() {
+    // TODO Workaround, need to check how can molecule is null
+    if (!this.molecule)
+      return '';
+
     if(this.contains_residues)
       return (this.molecule.sum_formular || '') + this.polymer_formula;
     else
@@ -586,7 +610,10 @@ export default class Sample extends Element {
 
   get svgPath() {
     if (this.sample_svg_file){
-      return `/images/samples/${this.sample_svg_file}`;
+      if(this.sample_svg_file === '***')
+        return `/images/no_image_180.svg`
+      else
+        return `/images/samples/${this.sample_svg_file}`;
     } else {
       return this.molecule && this.molecule.molecule_svg_file ? `/images/molecules/${this.molecule.molecule_svg_file}` : '';
     }

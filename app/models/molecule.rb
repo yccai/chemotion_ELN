@@ -4,26 +4,41 @@ class Molecule < ActiveRecord::Base
 
   has_many :samples
   has_many :collections, through: :samples
+
   before_save :sanitize_molfile
 
   validates_uniqueness_of :inchikey, scope: :is_partial
 
   # scope for suggestions
-  scope :by_sum_formular, ->(query) { where('sum_formular ILIKE ?', "%#{query}%") }
-  scope :by_iupac_name, ->(query) { where('iupac_name ILIKE ?', "%#{query}%") }
+  scope :by_iupac_name, -> (query) {
+    where('iupac_name ILIKE ?', "%#{query}%")
+  }
+  scope :by_sum_formular, -> (query) {
+    where('sum_formular ILIKE ?', "%#{query}%")
+  }
+  scope :by_inchistring, -> (query) {
+    where('inchistring ILIKE ?', "%#{query}%")
+  }
+  scope :by_cano_smiles, -> (query) {
+    where('cano_smiles ILIKE ?', "%#{query}%")
+  }
+
   scope :with_reactions, -> {
-    sample_ids = ReactionsProductSample.pluck(:sample_id) + ReactionsReactantSample.pluck(:sample_id) + ReactionsStartingMaterialSample.pluck(:sample_id)
+    sample_ids = ReactionsProductSample.pluck(:sample_id) +
+      ReactionsReactantSample.pluck(:sample_id) +
+      ReactionsStartingMaterialSample.pluck(:sample_id)
     molecule_ids = Sample.find(sample_ids).flat_map(&:molecule).map(&:id)
     where(id: molecule_ids)
   }
   scope :with_wellplates, -> {
-    molecule_ids = Wellplate.all.flat_map(&:samples).flat_map(&:molecule).map(&:id)
+    molecule_ids =
+      Wellplate.all.flat_map(&:samples).flat_map(&:molecule).map(&:id)
     where(id: molecule_ids)
   }
 
   def self.find_or_create_by_molfile molfile, is_partial = false
 
-    molfile = self.skip_residues(molfile) if is_partial
+    molfile = self.skip_residues(molfile)
 
     babel_info = Chemotion::OpenBabelService.molecule_info_from_molfile(molfile)
 
@@ -32,8 +47,10 @@ class Molecule < ActiveRecord::Base
 
       #todo: consistent naming
 
-      molecule = Molecule.find_or_create_by(inchikey: inchikey, is_partial: is_partial) do |molecule|
-        pubchem_info = Chemotion::PubchemService.molecule_info_from_inchikey(inchikey)
+      molecule = Molecule.find_or_create_by(inchikey: inchikey,
+        is_partial: is_partial) do |molecule|
+        pubchem_info =
+          Chemotion::PubchemService.molecule_info_from_inchikey(inchikey)
 
         molecule.molfile = molfile
         molecule.assign_molecule_data babel_info, pubchem_info
@@ -44,10 +61,12 @@ class Molecule < ActiveRecord::Base
   end
 
   def refresh_molecule_data
-    babel_info = Chemotion::OpenBabelService.molecule_info_from_molfile(self.molfile)
+    babel_info =
+      Chemotion::OpenBabelService.molecule_info_from_molfile(self.molfile)
     inchikey = babel_info[:inchikey]
     unless inchikey.blank?
-      pubchem_info = Chemotion::PubchemService.molecule_info_from_inchikey(inchikey)
+      pubchem_info =
+        Chemotion::PubchemService.molecule_info_from_inchikey(inchikey)
 
       self.assign_molecule_data babel_info, pubchem_info
       self.save!
@@ -65,6 +84,9 @@ class Molecule < ActiveRecord::Base
     self.check_sum_formular # correct exact and average MW for resins
 
     self.attach_svg babel_info[:svg]
+
+    self.cano_smiles = babel_info[:cano_smiles]
+
   end
 
   def attach_svg svg_data
@@ -126,6 +148,6 @@ private
   # TODO: check that molecules are OK and remove this method. fix is in editor
   def sanitize_molfile
     index = self.molfile.lines.index { |l| l.match /(M.+END+)/ }
-    self.molfile = self.molfile.lines[0..index].join
+    self.molfile = self.molfile.lines[0..index].join if index.is_a?(Integer)
   end
 end

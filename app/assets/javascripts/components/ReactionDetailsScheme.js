@@ -1,13 +1,14 @@
 import React, {Component} from 'react';
-import {Button, ListGroup, ListGroupItem,Glyphicon} from 'react-bootstrap';
+import { ListGroup, ListGroupItem,Tooltip, OverlayTrigger} from 'react-bootstrap';
 import MaterialGroupContainer from './MaterialGroupContainer';
-import Reaction from './models/Reaction';
 import Sample from './models/Sample';
 import Molecule from './models/Molecule';
 import ReactionDetailsMainProperties from './ReactionDetailsMainProperties';
 
-import ElementActions from './actions/ElementActions';
 import NotificationActions from './actions/NotificationActions'
+
+import Select from 'react-select'
+import {solventOptions} from './staticDropdownOptions/options'
 
 export default class ReactionDetailsScheme extends Component {
   constructor(props) {
@@ -87,7 +88,25 @@ export default class ReactionDetailsScheme extends Component {
           this.updatedReactionForEquivalentChange(changeEvent)
         );
         break;
+      case 'externalLabelChanged':
+        this.onReactionChange(
+          this.updatedReactionForExternalLabelChange(changeEvent)
+        );
+        break;
+      case 'externalLabelCompleted':
+        const {reaction} = this.state;
+        this.onReactionChange(reaction, {schemaChanged: true});
+        break;
     }
+  }
+
+  updatedReactionForExternalLabelChange(changeEvent) {
+    let {sampleID, externalLabel} = changeEvent;
+    let updatedSample = this.props.reaction.sampleById(sampleID);
+
+    updatedSample.external_label = externalLabel;
+
+    return this.updatedReactionWithSample(this.updatedSamplesForExternalLabelChange.bind(this), updatedSample)
   }
 
   updatedReactionForReferenceChange(changeEvent) {
@@ -296,6 +315,16 @@ export default class ReactionDetailsScheme extends Component {
     });
   }
 
+  updatedSamplesForExternalLabelChange(samples, updatedSample) {
+    const {referenceMaterial} = this.props.reaction;
+    return samples.map((sample) => {
+      if (sample.id == updatedSample.id) {
+        sample.external_label = updatedSample.external_label;
+      }
+      return sample;
+    });
+  }
+
   updatedSamplesForReferenceChange(samples, referenceMaterial) {
     return samples.map((sample) => {
       if (sample.id == referenceMaterial.id) {
@@ -319,33 +348,56 @@ export default class ReactionDetailsScheme extends Component {
     const {reaction} = this.state;
     reaction.starting_materials = updateFunction(reaction.starting_materials, updatedSample, 'starting_materials');
     reaction.reactants = updateFunction(reaction.reactants, updatedSample, 'reactants');
+    reaction.solvents = updateFunction(reaction.solvents, updatedSample, 'solvents');
     reaction.products = updateFunction(reaction.products, updatedSample, 'products');
     return reaction;
   }
 
-  /**
-   * Add a (not yet persisted) sample to a material group
-   * of the given reaction
-   */
-  addSampleToMaterialGroup(reaction, materialGroup) {
-    ElementActions.addSampleToMaterialGroup({
-      reaction,
-      materialGroup
-    });
-  }
 
 
   render() {
     const {reaction} = this.state;
-    let addSampleButton = (sampleType)=> <Button bsStyle="success" bsSize="xs" onClick={() => this.addSampleToMaterialGroup(reaction, sampleType)}><Glyphicon glyph="plus" /></Button>
+
+    let showMultiSolvents = reaction.solvents.length === 0 ? 'solvent' : 'solvents';
+
+    const solventTp = (
+      <Tooltip id="solventTp">
+        <p>Select one solvent without editing samples.</p>
+      </Tooltip>
+    )
+    const multiSolventsTp = (
+      <Tooltip id="multiSolventsTp">
+        <p>This will overwrite and disable 'solvent'.</p>
+        <p>You need to edit solvents as samples.</p>
+        <p>If you want to use 'solvent', you need to delete all 'multipe solvents'.</p>
+      </Tooltip>
+    )
+    const hintSolvent = (
+      <div>
+        Solvent &nbsp;
+        <OverlayTrigger placement="top" overlay={solventTp}>
+          <i className="fa fa-info-circle"/>
+        </OverlayTrigger>
+      </div>
+    )
+    const hintSolvents = (
+      <div>
+        Multiple Solvents  &nbsp;
+        <OverlayTrigger placement="top" overlay={multiSolventsTp}>
+          <i className="fa fa-info-circle"/>
+        </OverlayTrigger>
+      </div>
+    )
+
+    let minPadding = {padding: "1px 2px 2px 0px"}
 
     return (
       <div>
         <ListGroup fill>
-          <ListGroupItem>
-            <h4 className="list-group-item-heading" >{addSampleButton('starting_materials')}&nbsp;Starting Materials </h4>
+          <ListGroupItem style={minPadding}>
 
             <MaterialGroupContainer
+              reaction={reaction}
               materialGroup="starting_materials"
               materials={reaction.starting_materials}
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
@@ -355,9 +407,10 @@ export default class ReactionDetailsScheme extends Component {
               onChange={(changeEvent) => this.handleMaterialsChange(changeEvent)}
               />
           </ListGroupItem>
-          <ListGroupItem>
-            <h4 className="list-group-item-heading" >{addSampleButton('reactants')}&nbsp;Reactants </h4>
+          <ListGroupItem style={minPadding} >
+
             <MaterialGroupContainer
+              reaction={reaction}
               materialGroup="reactants"
               materials={reaction.reactants}
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
@@ -368,9 +421,10 @@ export default class ReactionDetailsScheme extends Component {
               />
 
           </ListGroupItem>
-          <ListGroupItem>
-            <h4 className="list-group-item-heading" > {addSampleButton('products')}&nbsp;Products</h4>
+          <ListGroupItem style={minPadding}>
+
             <MaterialGroupContainer
+              reaction={reaction}
               materialGroup="products"
               materials={reaction.products}
               dropMaterial={(material, previousMaterialGroup, materialGroup) => this.dropMaterial(material, previousMaterialGroup, materialGroup)}
@@ -384,9 +438,14 @@ export default class ReactionDetailsScheme extends Component {
         </ListGroup>
         <ReactionDetailsMainProperties
           reaction={reaction}
-          onReactionChange={reaction => this.onReactionChange(reaction)}
-          />
+          onInputChange={(type, event) => this.props.onInputChange(type, event)} />
       </div>
     );
   }
+}
+
+ReactionDetailsScheme.propTypes = {
+  reaction: React.PropTypes.object,
+  onReactionChange: React.PropTypes.func,
+  onInputChange: React.PropTypes.func
 }

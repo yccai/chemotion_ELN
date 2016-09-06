@@ -3,13 +3,13 @@ class OSample < OpenStruct
   def initialize data
     # set nested attributes
     %i(residues elemental_compositions).each do |prop|
-      prop_value = data.delete(prop)
+      prop_value = data.delete(prop) || []
       prop_value.each { |i| i.delete :id }
       data.merge!(
         "#{prop}_attributes".to_sym => prop_value
       ) unless prop_value.blank?
     end
-    data[:elemental_compositions_attributes].each { |i| i.delete(:description)}
+    data[:elemental_compositions_attributes].each { |i| i.delete(:description)} if data[:elemental_compositions_attributes]
     super
   end
 
@@ -45,7 +45,7 @@ module Chemotion
         end
 
         before do
-          error!('401 Unauthorized', 401) unless ElementsPolicy.new(@current_user, Reaction.for_user(current_user.id).for_ui_state(params[:ui_state])).destroy?
+          error!('401 Unauthorized', 401) unless ElementsPolicy.new(current_user, Reaction.for_user(current_user.id).for_ui_state(params[:ui_state])).destroy?
         end
 
         delete do
@@ -66,14 +66,23 @@ module Chemotion
       end
       paginate per_page: 7, offset: 0
 
+      before do
+        params[:per_page].to_i > 100 && (params[:per_page] = 100)
+      end
+      
       get do
         scope = if params[:collection_id]
-          Collection.belongs_to_or_shared_by(current_user.id).find(params[:collection_id]).reactions
+          begin
+            Collection.belongs_to_or_shared_by(current_user.id,current_user.group_ids).
+              find(params[:collection_id]).reactions
+          rescue ActiveRecord::RecordNotFound
+            Reaction.none
+          end
         else
           Reaction.joins(:collections).where('collections.user_id = ?', current_user.id).uniq
         end.order("created_at DESC")
 
-        paginate(scope).map{|s| ElementPermissionProxy.new(current_user, s).serialized}
+        paginate(scope).map{|s| ElementPermissionProxy.new(current_user, s, user_ids).serialized}
       end
 
       desc "Return serialized reaction by id"
@@ -82,12 +91,12 @@ module Chemotion
       end
       route_param :id do
         before do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(@current_user, Reaction.find(params[:id])).read?
+          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user, Reaction.find(params[:id])).read?
         end
 
         get do
           reaction = Reaction.find(params[:id])
-          {reaction: ElementPermissionProxy.new(current_user, reaction).serialized}
+          {reaction: ElementPermissionProxy.new(current_user, reaction, user_ids).serialized}
         end
       end
 
@@ -107,7 +116,7 @@ module Chemotion
       end
       route_param :id do
         before do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(@current_user, Reaction.find(params[:id])).destroy?
+          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user, Reaction.find(params[:id])).destroy?
         end
 
         delete do
@@ -139,7 +148,7 @@ module Chemotion
       route_param :id do
 
         before do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(@current_user, Reaction.find(params[:id])).update?
+          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user, Reaction.find(params[:id])).update?
         end
 
         put do
@@ -155,7 +164,7 @@ module Chemotion
             ReactionUpdator.update_literatures_for_reaction(reaction, literatures)
             reaction.reload
           end
-          {reaction: ElementPermissionProxy.new(current_user, reaction).serialized}
+          {reaction: ElementPermissionProxy.new(current_user, reaction, user_ids).serialized}
         end
       end
 
@@ -233,6 +242,7 @@ module ReactionUpdator
     materials = {
       starting_material: Array(material_attributes['starting_materials']).map{|m| OSample.new(m)},
       reactant: Array(material_attributes['reactants']).map{|m| OSample.new(m)},
+      solvent: Array(material_attributes['solvents']).map{|m| OSample.new(m)},
       product: Array(material_attributes['products']).map{|m| OSample.new(m)}
     }
 
@@ -256,6 +266,7 @@ module ReactionUpdator
               subsample.target_amount_unit = sample.target_amount_unit
               subsample.real_amount_value = sample.real_amount_value
               subsample.real_amount_unit = sample.real_amount_unit
+              subsample.external_label = sample.external_label if sample.external_label
 
               if ra = (sample.residues_attributes || sample.residues)
                 subsample.residues_attributes = ra.uniq || ra.each do |i|
@@ -303,6 +314,8 @@ module ReactionUpdator
             existing_sample.target_amount_unit = sample.target_amount_unit
             existing_sample.real_amount_value = sample.real_amount_value
             existing_sample.real_amount_unit = sample.real_amount_unit
+            existing_sample.external_label = sample.external_label if sample.external_label
+
             if r = existing_sample.residues[0]
               r.assign_attributes sample.residues_attributes[0]
             end
@@ -323,6 +336,7 @@ module ReactionUpdator
               #clear existing associations
               reaction.reactions_starting_material_samples.find_by(sample_id: sample.id).try(:destroy)
               reaction.reactions_reactant_samples.find_by(sample_id: sample.id).try(:destroy)
+              reaction.reactions_solvent_samples.find_by(sample_id: sample.id).try(:destroy)
               reaction.reactions_product_samples.find_by(sample_id: sample.id).try(:destroy)
 
               #create a new association
@@ -342,6 +356,7 @@ module ReactionUpdator
       current_sample_ids = [
         reaction.reactions_starting_material_samples.pluck(:sample_id),
         reaction.reactions_reactant_samples.pluck(:sample_id),
+        reaction.reactions_solvent_samples.pluck(:sample_id),
         reaction.reactions_product_samples.pluck(:sample_id)
       ].flatten.uniq
 

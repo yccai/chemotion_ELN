@@ -1,5 +1,6 @@
 import React from 'react';
-import {Label, Pagination, Table, Input} from 'react-bootstrap';
+import { Pagination, Table, Form, Col,
+         FormGroup, FormControl, ControlLabel} from 'react-bootstrap';
 
 import UIStore from './stores/UIStore';
 import UIActions from './actions/UIActions';
@@ -21,28 +22,32 @@ export default class ElementsTable extends React.Component {
       currentElement: null,
       ui: {}
     }
+    this.onChange = this.onChange.bind(this)
+    this.onChangeUI = this.onChangeUI.bind(this)
   }
 
   componentDidMount() {
     UIStore.getState();
-    ElementStore.listen(this.onChange.bind(this));
-    UIStore.listen(this.onChangeUI.bind(this));
+    ElementStore.listen(this.onChange);
+    UIStore.listen(this.onChangeUI);
     this.initializePagination();
+    this.initState();
   }
 
   componentWillUnmount() {
-    ElementStore.unlisten(this.onChange.bind(this));
-    UIStore.unlisten(this.onChangeUI.bind(this));
+    ElementStore.unlisten(this.onChange);
+    UIStore.unlisten(this.onChangeUI);
   }
 
   initializePagination() {
-    const type = this.props.type;
     const {page, pages, perPage, totalElements} = this.state;
-
     this.setState({
       page, pages, perPage, totalElements
     });
+  }
 
+  initState(){
+    this.onChange(ElementStore.getState());
   }
 
   onChangeUI(state) {
@@ -96,12 +101,13 @@ export default class ElementsTable extends React.Component {
     }
   }
 
-  handlePaginationSelect(event, selectedEvent) {
+  handlePaginationSelect(eventKey) {
     const {pages} = this.state;
     const {type} = this.props;
-    if(selectedEvent.eventKey > 0 && selectedEvent.eventKey <= pages) {
+
+    if(eventKey > 0 && eventKey <= pages) {
       this.setState({
-        page: selectedEvent.eventKey
+        page: eventKey
       }, () => UIActions.setPagination({type, page: this.state.page}));
     }
   }
@@ -118,7 +124,7 @@ export default class ElementsTable extends React.Component {
         activePage={page}
         items={pages}
         bsSize="small"
-        onSelect={(event, selectedEvent) => this.handlePaginationSelect(event, selectedEvent)}/>
+        onSelect={(eventKey) => this.handlePaginationSelect(eventKey)}/>
     }
   }
 
@@ -144,10 +150,20 @@ export default class ElementsTable extends React.Component {
   numberOfResultsInput() {
     let {ui} = this.state
     return (
-      <Input className="number-shown-select"
-        onChange={event => this.handleNumberOfResultsChange(event)}
-        label="Show:" type="text" bsSize="small"
-        value={ui.number_of_results ? ui.number_of_results : 0} />
+      <Form horizontal style={{float: 'right'}}>
+        <FormGroup>
+          <Col sm={4} style={{textAlign: 'center', float: 'right'}}>
+            <FormControl type="text" style={{textAlign: 'center', float: 'right'}}
+                         onChange={event => this.handleNumberOfResultsChange(event)}
+                         value={ui.number_of_results ? ui.number_of_results : 0} />
+          </Col>
+          <Col componentClass={ControlLabel} sm={2}
+               style={{textAlign: 'center', float: 'right'}}>
+            Show
+          </Col>
+        </FormGroup>
+      </Form>
+
     );
   }
 
@@ -202,16 +218,21 @@ export default class ElementsTable extends React.Component {
   }
 
   render() {
-    const {elements, ui, currentElement} = this.state
-    const {overview, type} = this.props
     return (
       <div>
         {this.renderEntries()}
-        {this.pagination()}
-        <div style={{float: 'right', paddingTop: 4}}>
-          {this.numberOfResultsInput()}
-          {this.previewCheckbox()}
-        </div>
+
+        <table style={{width: '100%'}}><tbody>
+        <tr>
+          <td>{this.pagination()}</td>
+          <td>
+            <div>
+              {this.numberOfResultsInput()}
+              {this.previewCheckbox()}
+            </div>
+          </td>
+        </tr>
+        </tbody></table>
       </div>
     );
   }

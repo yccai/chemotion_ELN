@@ -4,6 +4,7 @@ import {Tabs, Tab} from 'react-bootstrap';
 import ElementStore from './stores/ElementStore';
 import UIStore from './stores/UIStore';
 import UIActions from './actions/UIActions';
+import KeyboardActions from './actions/KeyboardActions';
 
 export default class List extends React.Component {
   constructor(props) {
@@ -15,6 +16,10 @@ export default class List extends React.Component {
       totalScreenElements: 0,
       currentTab: 1
     }
+
+    this.onChange = this.onChange.bind(this)
+    this.onChangeUI = this.onChangeUI.bind(this)
+    this.initState = this.initState.bind(this)
   }
 
   _checkedElements(type) {
@@ -28,13 +33,18 @@ export default class List extends React.Component {
   }
 
   componentDidMount() {
-    ElementStore.listen(this.onChange.bind(this));
-    UIStore.listen(this.onChangeUI.bind(this));
+    ElementStore.listen(this.onChange);
+    UIStore.listen(this.onChangeUI);
+    this.initState();
   }
 
   componentWillUnmount() {
-    ElementStore.unlisten(this.onChange.bind(this));
-    UIStore.unlisten(this.onChangeUI.bind(this));
+    ElementStore.unlisten(this.onChange);
+    UIStore.unlisten(this.onChangeUI);
+  }
+
+  initState(){
+    this.onChange(ElementStore.getState())
   }
 
   onChange(state) {
@@ -76,6 +86,7 @@ export default class List extends React.Component {
     let page = uiState[type].page;
 
     UIActions.setPagination({type: type, page: page})
+    KeyboardActions.contextChange(type)
   }
 
   render() {
@@ -99,7 +110,7 @@ export default class List extends React.Component {
 
     return (
       <Tabs defaultActiveKey={this.state.currentTab} activeKey={this.state.currentTab}
-                  onSelect={(e) => this.handleTabSelect(e)}>
+            onSelect={(e) => this.handleTabSelect(e)} id="tabList">
         <Tab eventKey={1} title={samples}>
           <ElementsTable overview={overview} showReport={showReport} type='sample'/>
         </Tab>

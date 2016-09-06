@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Row, Col, Input, Table, ListGroup, ListGroupItem, Button, ButtonToolbar} from 'react-bootstrap';
+import {Row, Col, FormGroup, FormControl, ControlLabel, Table, ListGroup, ListGroupItem, Button, ButtonToolbar} from 'react-bootstrap';
 import Dropzone from 'react-dropzone';
 import Utils from './utils/Functions';
 
@@ -60,8 +60,12 @@ export default class Dataset extends Component {
   handleFileDrop(files) {
     const {dataset} = this.state;
 
-    let attachments = files.map(f => Attachment.fromFile(f));
-    dataset.attachments = dataset.attachments.concat(attachments);
+    let attachments = files.map(f => Attachment.fromFile(f))
+    dataset.attachments = dataset.attachments.concat(attachments)
+    let attachment_list = dataset.attachments
+    let attach_name = attachment_list[attachment_list.length - 1].name
+    attach_name = attach_name.slice(0, -4)
+    dataset.name = attach_name
 
     this.setState({dataset});
   }
@@ -160,32 +164,39 @@ export default class Dataset extends Component {
       <Row>
         <Col md={6} style={{paddingRight: 0}}>
           <Col md={12} style={{padding: 0}}>
-            <Input
-              type="text"
-              label="Name"
-              value={dataset.name}
-              disabled={readOnly}
-              onChange={event => this.handleInputChange('name', event)}
-              />
+            <FormGroup controlId="datasetName">
+              <ControlLabel>Name</ControlLabel>
+              <FormControl
+                type="text"
+                value={dataset.name || ''}
+                disabled={readOnly}
+                onChange={event => this.handleInputChange('name', event)}
+                />
+            </FormGroup>
+
           </Col>
           <Col md={12} style={{padding: 0}}>
-            <Input
-              type="text"
-              label="Instrument"
-              value={dataset.instrument}
-              disabled={readOnly}
-              onChange={event => this.handleInputChange('instrument', event)}
+          <FormGroup controlId="datasetInstrument">
+            <ControlLabel>Instrument</ControlLabel>
+              <FormControl
+                type="text"
+                value={dataset.instrument || ''}
+                disabled={readOnly}
+                onChange={event => this.handleInputChange('instrument', event)}
               />
+            </FormGroup>
           </Col>
           <Col md={12} style={{padding: 0}}>
-            <Input
-              type="textarea"
-              label="Description"
-              value={dataset.description}
-              disabled={readOnly}
-              onChange={event => this.handleInputChange('description', event)}
-              style={{minHeight: 100}}
+            <FormGroup controlId="datasetDescription">
+              <ControlLabel>Description</ControlLabel>
+              <FormControl
+                type="textarea"
+                value={dataset.description || ''}
+                disabled={readOnly}
+                onChange={event => this.handleInputChange('description', event)}
+                style={{minHeight: 100}}
               />
+            </FormGroup>
           </Col>
         </Col>
         <Col md={6}>

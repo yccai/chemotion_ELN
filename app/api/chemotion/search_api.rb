@@ -5,22 +5,57 @@ module Chemotion
     # TODO implement search cache?
     helpers do
       def page_size
-        7
+        params[:per_page] == nil ? 7 : params[:per_page]
       end
 
       def pages(total_elements)
         total_elements.fdiv(page_size).ceil
       end
 
-      def serialization_by_elements_and_page(elements, page=1)
+      def structure_search
+        params[:selection].molfile == nil ? false : true
+      end
+
+      def get_arg
+        structure_search ? params[:selection].molfile : params[:selection].name
+      end
+
+      def get_search_method
+        return params[:selection].search_by_method unless structure_search
+
+        page_size = params[:per_page].to_i
+        return  'structure'
+      end
+
+      def serialization_by_elements_and_page(elements, page = 1)
         samples = elements.fetch(:samples, [])
         reactions = elements.fetch(:reactions, [])
         wellplates = elements.fetch(:wellplates, [])
         screens = elements.fetch(:screens, [])
-        serialized_samples = {molecules: group_by_molecule(paginate(samples))}
-        serialized_reactions = Kaminari.paginate_array(reactions).page(page).per(page_size).map{|s| ReactionSerializer.new(s).serializable_hash.deep_symbolize_keys}
-        serialized_wellplates = Kaminari.paginate_array(wellplates).page(page).per(page_size).map{|s| WellplateSerializer.new(s).serializable_hash.deep_symbolize_keys}
-        serialized_screens = Kaminari.paginate_array(screens).page(page).per(page_size).map{|s| ScreenSerializer.new(s).serializable_hash.deep_symbolize_keys}
+
+        tmp = samples.empty? ? samples : paginate(samples)
+
+        # After paging, now we can map to searchable for AllElementSearch
+        tmp = tmp.map(&:searchable) if tmp.first.is_a?(PgSearch::Document)
+        reactions = reactions.map(&:searchable) if reactions.first.is_a?(PgSearch::Document)
+        wellplates = wellplates.map(&:searchable) if wellplates.first.is_a?(PgSearch::Document)
+        screens = screens.map(&:searchable) if screens.first.is_a?(PgSearch::Document)
+
+        serialized_samples = {
+          molecules: group_by_molecule(tmp)
+        }
+        serialized_reactions = Kaminari.paginate_array(reactions).page(page)
+          .per(page_size).map {|s|
+            ReactionSerializer.new(s).serializable_hash.deep_symbolize_keys
+          }
+        serialized_wellplates = Kaminari.paginate_array(wellplates).page(page)
+          .per(page_size).map{ |s|
+            WellplateSerializer.new(s).serializable_hash.deep_symbolize_keys
+          }
+        serialized_screens = Kaminari.paginate_array(screens).page(page)
+          .per(page_size).map{ |s|
+            ScreenSerializer.new(s).serializable_hash.deep_symbolize_keys
+          }
 
         {
           samples: {
@@ -54,11 +89,15 @@ module Chemotion
         }
       end
 
-      def scope_by_search_by_method_arg_and_collection_id(search_by_method, arg, collection_id)
+      # Generate search query
+      def scope_by_search_by_method_arg_and_collection_id(search_by_method,
+          arg, collection_id, is_sync = false)
         scope = case search_by_method
         when 'polymer_type'
-          Sample.for_user(current_user.id).joins(:residues).where("residues.custom_info -> 'polymer_type' ILIKE '%#{arg}%'")
-        when 'sum_formula', 'iupac_name', 'sample_name', 'sample_short_label'
+          Sample.for_user(current_user.id).joins(:residues)
+            .where("residues.custom_info -> 'polymer_type' ILIKE '%#{arg}%'")
+        when 'sum_formula', 'iupac_name', 'sample_name', 'sample_short_label',
+             'inchistring', 'cano_smiles'
           Sample.for_user(current_user.id).search_by(search_by_method, arg)
         when 'reaction_name'
           Reaction.for_user(current_user.id).search_by(search_by_method, arg)
@@ -68,9 +107,18 @@ module Chemotion
           Screen.for_user(current_user.id).search_by(search_by_method, arg)
         when 'substring'
           AllElementSearch.new(arg, current_user.id).search_by_substring
+        when 'structure'
+          molfile = Fingerprint.standardized_molfile arg
+          threshold = params[:selection].tanimoto_threshold
+          type = params[:selection].search_type
+
+          # TODO implement this: http://pubs.acs.org/doi/abs/10.1021/ci600358f
+          Sample.for_user(current_user.id)
+                .search_by_fingerprint(molfile, current_user.id, collection_id,
+                                       type, threshold)
         end
 
-        scope = scope.by_collection_id(params[:collection_id].to_i)
+        scope = scope.by_collection_id(collection_id.to_i)
 
         scope
       end
@@ -119,15 +167,23 @@ module Chemotion
           optional :page, type: Integer
           requires :selection, type: Hash
           requires :collection_id, type: String
+          optional :is_sync, type: Boolean
         end
 
         post do
-          search_by_method = params[:selection].search_by_method
-          arg = params[:selection].name
+          search_by_method = get_search_method()
+          arg = get_arg()
 
-          scope = scope_by_search_by_method_arg_and_collection_id(search_by_method, arg, params[:collection_id])
+          scope =
+            scope_by_search_by_method_arg_and_collection_id(search_by_method,
+                                                            arg,
+                                                            params[:collection_id],
+                                                            params[:is_sync])
 
-          serialization_by_elements_and_page(elements_by_scope(scope), params[:page])
+
+          serialization_by_elements_and_page(elements_by_scope(scope),
+                                             params[:page])
+
         end
       end
 
@@ -137,17 +193,19 @@ module Chemotion
           optional :page, type: Integer
           requires :selection, type: Hash
           requires :collection_id, type: String
+          optional :is_sync, type: Boolean
         end
 
         post do
-          search_by_method = params[:selection].search_by_method
-          arg = params[:selection].name
+          search_by_method = get_search_method()
+          arg = get_arg()
 
           scope = Sample.search_by(search_by_method, arg)
 
-          samples = scope.by_collection_id(params[:collection_id].to_i)
+          samples = scope.by_collection_id(params[:collection_id].to_i, params[:is_sync])
 
-          serialization_by_elements_and_page(elements_by_scope(samples), params[:page])
+          serialization_by_elements_and_page(elements_by_scope(samples),
+                                             params[:page])
         end
       end
 
@@ -157,17 +215,19 @@ module Chemotion
           optional :page, type: Integer
           requires :selection, type: Hash
           requires :collection_id, type: String
+          optional :is_sync, type: Boolean
         end
 
         post do
-          search_by_method = params[:selection].search_by_method
-          arg = params[:selection].name
+          search_by_method = get_search_method()
+          arg = get_arg()
 
           scope = Reaction.search_by(search_by_method, arg)
 
-          reactions = scope.by_collection_id(params[:collection_id].to_i)
+          reactions = scope.by_collection_id(params[:collection_id].to_i, params[:is_sync])
 
-          serialization_by_elements_and_page(elements_by_scope(reactions), params[:page])
+          serialization_by_elements_and_page(elements_by_scope(reactions),
+                                             params[:page])
         end
       end
 
@@ -177,17 +237,19 @@ module Chemotion
           optional :page, type: Integer
           requires :selection, type: Hash
           requires :collection_id, type: String
+          optional :is_sync, type: Boolean
         end
 
         post do
-          search_by_method = params[:selection].search_by_method
-          arg = params[:selection].name
+          search_by_method = get_search_method()
+          arg = get_arg()
 
           scope = Wellplate.search_by(search_by_method, arg)
 
-          wellplates = scope.by_collection_id(params[:collection_id].to_i)
+          wellplates = scope.by_collection_id(params[:collection_id].to_i, params[:is_sync])
 
-          serialization_by_elements_and_page(elements_by_scope(wellplates), params[:page])
+          serialization_by_elements_and_page(elements_by_scope(wellplates),
+                                             params[:page])
         end
       end
 
@@ -197,17 +259,19 @@ module Chemotion
           optional :page, type: Integer
           requires :selection, type: Hash
           requires :collection_id, type: String
+          optional :is_sync, type: Boolean
         end
 
         post do
-          search_by_method = params[:selection].search_by_method
-          arg = params[:selection].name
+          search_by_method = get_search_method()
+          arg = get_arg()
 
           scope = Screen.search_by(search_by_method, arg)
 
-          screens = scope.by_collection_id(params[:collection_id].to_i)
+          screens = scope.by_collection_id(params[:collection_id].to_i, params[:is_sync])
 
-          serialization_by_elements_and_page(elements_by_scope(screens), params[:page])
+          serialization_by_elements_and_page(elements_by_scope(screens),
+                                             params[:page])
         end
       end
 

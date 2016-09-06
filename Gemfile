@@ -46,6 +46,7 @@ gem 'awesome_print'
 
 # Report Generator
 gem 'rtf'
+gem 'sablon', github: 'ComPlat/sablon'
 gem 'rmagick'
 gem 'axlsx', git: 'git://github.com/randym/axlsx'
 # Import of elements from XLS and CSV file
@@ -53,7 +54,7 @@ gem 'roo', ">2.3.0"
 
 gem 'httparty'
 # Ketcher editor
-gem 'ketcherails', '0.1.1', github: 'ComPlat/ketcher-rails'
+gem 'ketcherails', '0.1.3', github: 'ComPlat/ketcher-rails'
 
 # Free font icons
 gem "font-awesome-rails"
@@ -73,6 +74,10 @@ gem "paranoia", "~> 2.0"
 gem "whenever", require: false
 gem "dotenv-rails"
 gem "backup"
+gem 'yaml_db'
+
+# CI
+gem 'coveralls', require: false
 
 if ENV.fetch("RAILS_ENV", "development").match(/^(development|test)\z/)
   gem 'openbabel', '2.3.2.1', github: 'cubuslab/openbabel-gem'
@@ -86,7 +91,10 @@ group :production do
 
 end
 
-gem 'web-console', '~> 2.0', group: :development
+group :development do
+  gem 'web-console', '~> 2.0'
+  gem 'better_errors' # allows to debug exception on backend from browser
+end
 
 group :development, :test do
 
@@ -123,14 +131,15 @@ group :test do
   gem 'factory_girl_rails'
   gem 'database_cleaner'
 
-  gem "faker", "~> 1.4"
-  gem "capybara", "~> 2.4"
-  gem "launchy", "~> 2.4"
-  gem "selenium-webdriver", "~> 2.43"
+  gem 'webmock'
+  gem "faker", "~> 1.6.6"
+  gem "capybara", "~> 2.7.1"
+  gem "launchy", "~> 2.4.3"
+  gem "selenium-webdriver", "~> 2.53.4"
 end
 
 # Chemotion plugins: lsit your chemotion specific plugin gems here
 
-gem 'scifinding', '0.1.0', github: 'ComPlat/scifinding' , :group => [:plugins,:development,:production]
+#gem 'scifinding', '0.1.0', github: 'ComPlat/scifinding' , :group => [:plugins,:development,:production]
 
 ####

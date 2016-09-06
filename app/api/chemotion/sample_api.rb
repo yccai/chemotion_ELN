@@ -18,7 +18,7 @@ module Chemotion
         end
 
         before do
-          error!('401 Unauthorized', 401) unless ElementsPolicy.new(@current_user, Sample.for_user(current_user.id).for_ui_state(params[:ui_state])).read?
+          error!('401 Unauthorized', 401) unless ElementsPolicy.new(current_user, Sample.for_user(current_user.id).for_ui_state(params[:ui_state])).read?
         end
 
         # we are using POST because the fetchers don't support GET requests with body data
@@ -40,7 +40,7 @@ module Chemotion
         end
 
         before do
-          error!('401 Unauthorized', 401) unless ElementsPolicy.new(@current_user, Sample.for_user(current_user.id).for_ui_state(params[:ui_state])).destroy?
+          error!('401 Unauthorized', 401) unless ElementsPolicy.new(current_user, Sample.for_user(current_user.id).for_ui_state(params[:ui_state])).destroy?
         end
 
         delete do
@@ -74,20 +74,43 @@ module Chemotion
       desc "Return serialized molecules_samples_groups  of current user"
       params do
         optional :collection_id, type: Integer, desc: "Collection id"
+        optional :sync_collection_id, type: Integer, desc: "SyncCollectionsUser id"
       end
       paginate per_page: 7, offset: 0
 
+      before do
+        params[:per_page].to_i > 100 && (params[:per_page] = 100)
+      end
       get do
+        own_collection = false
         scope = if params[:collection_id]
-          coll = Collection.belongs_to_or_shared_by(current_user.id)
-          coll.find(params[:collection_id]).samples
-              .includes(:molecule, :residues, :elemental_compositions)
+          begin
+            c = Collection.belongs_to_or_shared_by(current_user.id,current_user.group_ids).find(params[:collection_id])
+            !c.is_shared && (c.shared_by_id != current_user.id) && (own_collection = true)
+            Collection.belongs_to_or_shared_by(current_user.id,current_user.group_ids)
+            .find(params[:collection_id]).samples
+            .includes(:molecule, :residues, :elemental_compositions, :reactions_product_samples, :reactions_starting_material_samples, :collections)
+          rescue ActiveRecord::RecordNotFound
+            Sample.none
+          end
+        elsif params[:sync_collection_id]
+          begin
+            own_collection = false
+            c = current_user.all_sync_in_collections_users.find(params[:sync_collection_id])
+            c.collection.samples
+            .includes(:molecule, :residues, :elemental_compositions, :reactions_product_samples, :reactions_starting_material_samples, :collections)
+          rescue ActiveRecord::RecordNotFound
+            Sample.none
+          end
         else
           # All collection
+          own_collection = true
           Sample.for_user(current_user.id).includes(:molecule).uniq
-        end.uniq.not_reactant.order("updated_at DESC")
+        end.uniq.not_reactant.not_solvents.order("updated_at DESC")
 
-        return {molecules: group_by_molecule(paginate(scope))}
+        return {
+          molecules: group_by_molecule(paginate(scope),own_collection)
+        }
       end
 
       desc "Return serialized sample by id"
@@ -96,13 +119,13 @@ module Chemotion
       end
       route_param :id do
         before do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(@current_user, Sample.find(params[:id])).read?
+          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user, Sample.find(params[:id])).read?
         end
 
         get do
           sample= Sample.includes(:molecule, :residues, :elemental_compositions)
                          .find(params[:id])
-          {sample: ElementPermissionProxy.new(current_user, sample).serialized}
+          {sample: ElementPermissionProxy.new(current_user, sample, user_ids).serialized}
         end
       end
 
@@ -212,7 +235,7 @@ module Chemotion
       end
       route_param :id do
         before do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(@current_user, Sample.find(params[:id])).update?
+          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user, Sample.find(params[:id])).update?
         end
 
         put do
@@ -236,7 +259,7 @@ module Chemotion
           if sample = Sample.find(params[:id])
             sample.update(attributes)
           end
-          {sample: ElementPermissionProxy.new(current_user, sample).serialized}
+          {sample: ElementPermissionProxy.new(current_user, sample, user_ids).serialized}
         end
       end
 
@@ -323,7 +346,7 @@ module Chemotion
       end
       route_param :id do
         before do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(@current_user, Sample.find(params[:id])).destroy?
+          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user, Sample.find(params[:id])).destroy?
         end
 
         delete do

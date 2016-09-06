@@ -3,7 +3,8 @@ import BaseFetcher from './BaseFetcher';
 
 export default class CollectionsFetcher {
   static takeOwnership(params) {
-    let promise = fetch('/api/v1/collections/take_ownership/' + params.id, {
+    let sync = params.isSync ? "syncC" : "c"
+    let promise = fetch(`/api/v1/${sync}ollections/take_ownership/${params.id}`, {
       credentials: 'same-origin',
       method: 'POST'
     })
@@ -63,6 +64,20 @@ export default class CollectionsFetcher {
 
     return promise;
   }
+  static fetchSyncRemoteRoots() {
+    let promise = fetch('/api/v1/syncCollections/sync_remote_roots.json', {
+        credentials: 'same-origin'
+      })
+      .then((response) => {
+        return response.json()
+      }).then((json) => {
+        return json;
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+
+    return promise;
+  }
 
   static createSharedCollections(params) {
     let promise = fetch('/api/v1/collections/shared/', {
@@ -82,6 +97,57 @@ export default class CollectionsFetcher {
 
     return promise;
   }
+
+  static createSync(params) {
+    let promise = fetch('/api/v1/syncCollections/', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        collection_attributes: params.collection_attributes,
+        user_ids: params.user_ids,
+        id: params.id,
+      })
+    })
+
+    return promise;
+  }
+
+  static editSync(params) {
+    let promise = fetch('/api/v1/syncCollections/' + params.id, {
+      credentials: 'same-origin',
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        collection_attributes: params.collection_attributes,
+        user_ids: params.user_ids,
+      })
+    })
+
+    return promise;
+  }
+
+  static deleteSync(params) {
+    let promise = fetch('/api/v1/syncCollections/' + params.id, {
+      credentials: 'same-origin',
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+      })
+    })
+
+    return promise;
+  }
+
 
   static bulkUpdateUnsharedCollections(params) {
     let promise = fetch('/api/v1/collections', {
@@ -109,11 +175,7 @@ export default class CollectionsFetcher {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        permission_level: params.permission_level,
-        sample_detail_level: params.sample_detail_level,
-        reaction_detail_level: params.reaction_detail_level,
-        wellplate_detail_level: params.wellplate_detail_level,
-        screen_detail_level: params.screen_detail_level
+        collection_attributes: params.collection_attributes,
       })
     })
 

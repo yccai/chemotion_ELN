@@ -2,7 +2,6 @@ import React, {Component} from 'react'
 import {Panel, Button, Tabs, Tab} from 'react-bootstrap';
 import StickyDiv from 'react-stickydiv'
 import Aviator from 'aviator';
-import Utils from '../utils/Functions';
 
 import ReportActions from '../actions/ReportActions';
 import ReportStore from '../stores/ReportStore';
@@ -11,12 +10,16 @@ import UIStore from '../stores/UIStore';
 import ElementStore from '../stores/ElementStore';
 
 import Reports from './Reports';
-import Settings from './Settings';
+import CheckBoxs from './CheckBoxs';
 
 export default class ReportContainer extends Component {
   constructor(props) {
     super(props);
-    this.state = ReportStore.getState();
+    this.state = {
+      ...ReportStore.getState(),
+      selectedReactionIds: [],
+      selectedReactions: []
+    }
     this.onChange = this.onChange.bind(this);
     this.onChangeUI = this.onChangeUI.bind(this);
   }
@@ -33,10 +36,7 @@ export default class ReportContainer extends Component {
   }
 
   onChange(state) {
-    this.setState({
-      settings: state.settings,
-      checkedAll: state.checkedAll
-    })
+    this.setState({...state})
   }
 
   onChangeUI(state) {
@@ -61,21 +61,12 @@ export default class ReportContainer extends Component {
   }
 
   render() {
-    const submitLabel = (true) ? "Create" : "Save"; // TBD
-    const style = {height: '220px'};
-    //let reactions = this.state.reactions.checkedIds.toArray();
-
     return (
       <StickyDiv zIndex={2}>
         <Panel header="Report Generation"
                bsStyle="default">
           <div className="button-right">
-            <Button bsStyle="primary"
-                    bsSize="xsmall"
-                    className="g-marginLeft--10"
-                    onClick={this.generateReports.bind(this)}>
-              <span><i className="fa fa-file-text-o"></i> Generate Report</span>
-            </Button>
+            {this.generateReportsBtn()}
             <Button bsStyle="danger"
                     bsSize="xsmall"
                     className="g-marginLeft--10"
@@ -84,17 +75,25 @@ export default class ReportContainer extends Component {
             </Button>
           </div>
 
-          <Tabs defaultActiveKey={0} >
+          <Tabs defaultActiveKey={0} id="report-tabs" >
             <Tab eventKey={0} title={"Setting"}>
-              <Settings settings={this.state.settings}
-                        toggleCheckbox={this.toggleCheckbox}
-                        toggleCheckAll={this.toggleCheckAll}
-                        checkedAll={this.state.checkedAll} />
+              <CheckBoxs  items={this.state.settings}
+                          toggleCheckbox={this.toggleSettings}
+                          toggleCheckAll={this.toggleSettingsAll}
+                          checkedAll={this.state.checkedAllSettings} />
             </Tab>
 
-            <Tab eventKey={1} title={"Report"}>
+            <Tab eventKey={1} title={"Config"}>
+              <CheckBoxs  items={this.state.configs}
+                          toggleCheckbox={this.toggleConfigs}
+                          toggleCheckAll={this.toggleConfigsAll}
+                          checkedAll={this.state.checkedAllConfigs} />
+            </Tab>
+
+            <Tab eventKey={2} title={"Report"}>
               <div className="panel-fit-screen">
-                <Reports selectedReactions={this.state.selectedReactions} settings={this.state.settings} />
+                <Reports selectedReactions={this.state.selectedReactions}
+                         settings={this.state.settings} />
               </div>
             </Tab>
           </Tabs>
@@ -104,8 +103,12 @@ export default class ReportContainer extends Component {
     );
   }
 
-  toggleCheckbox(text, checked){
+  toggleSettings(text, checked){
     ReportActions.updateSettings({text, checked})
+  }
+
+  toggleConfigs(text, checked){
+    ReportActions.updateConfigs({text, checked})
   }
 
   closeDetails() {
@@ -113,23 +116,42 @@ export default class ReportContainer extends Component {
     Aviator.navigate(`/collection/all`);
   }
 
-  toggleCheckAll() {
+  toggleSettingsAll() {
     ReportActions.toggleSettingsCheckAll()
+  }
+
+  toggleConfigsAll() {
+    ReportActions.toggleConfigsCheckAll()
   }
 
   generateReports() {
     const ids = this.state.selectedReactionIds.join('_')
-    const settings = this.state.settings.map(setting => {
-      if(setting.checked){
-        return setting.text
-      } else {
-        return null
-      }
-    }).filter(r => r!=null).join('_')
+    ReportActions.generateReports(ids)
+  }
 
-    Utils.downloadFile({
-      contents: "api/v1/multiple_reports/rtf?ids=" + ids + "&settings=" + settings,
-      name: "ELN-report_" + new Date().toISOString().slice(0,19)
-    })
+  generateReportsBtn() {
+    let showGeneReportBtnIds = this.state.selectedReactionIds.length !== 0 ? true : false
+    let showGeneReportBtnSts = this.state.settings.map(setting => {
+      if(setting.checked){
+        return true
+      }
+    }).filter(r => r!=null).length !== 0 ? true : false
+
+    return (
+      !this.state.processingReport ?
+      <Button bsStyle="primary"
+              bsSize="xsmall"
+              className="g-marginLeft--10"
+              disabled={!(showGeneReportBtnSts && showGeneReportBtnIds)}
+              onClick={this.generateReports.bind(this)}>
+        <span><i className="fa fa-file-text-o"></i> Generate Report</span>
+      </Button>
+      :
+      <Button bsStyle="danger"
+              bsSize="xsmall"
+              className="g-marginLeft--10">
+        <span><i className="fa fa-spinner fa-pulse fa-fw"></i> Processing your report, please wait...</span>
+      </Button>
+    )
   }
 }

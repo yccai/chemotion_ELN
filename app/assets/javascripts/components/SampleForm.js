@@ -1,13 +1,13 @@
 import React from 'react';
-import {Button,  Input, Glyphicon, Row, Col} from 'react-bootstrap';
+import {Button, Checkbox, FormGroup, FormControl, InputGroup, ControlLabel, Glyphicon, Row, Col} from 'react-bootstrap';
 
 import NumeralInputWithUnitsCompo from './NumeralInputWithUnitsCompo';
 import Select from 'react-select';
 
 import {solventOptions} from './staticDropdownOptions/options';
-import Sample from './models/Sample';
 
-const MWPrecision = 6;
+
+
 
 export default class SampleForm extends React.Component {
   constructor(props) {
@@ -51,21 +51,6 @@ export default class SampleForm extends React.Component {
     })
   }
 
-  _submitLabel() {
-    let {sample} = this.state;
-
-    if(sample.isNew) {
-      return "Create";
-    } else {
-      return "Save";
-    }
-  }
-
-  sampleIsValid() {
-    const {sample, loadingMolecule} = this.state;
-    return (sample.isValid && !loadingMolecule) || sample.is_scoped == true;
-  }
-
   structureEditorButton(isDisabled) {
     return (
       <Button onClick={this.showStructureEditor.bind(this)} disabled={isDisabled}>
@@ -78,22 +63,30 @@ export default class SampleForm extends React.Component {
   topSecretCheckbox(sample) {
     if(!sample.isMethodDisabled('is_top_secret')) {
       return (
-        <Input ref="topSecretInput" type="checkbox" label="Top secret"
+        <Checkbox ref="topSecretInput"
         checked={sample.is_top_secret}
-        onChange={(e) => this.handleFieldChanged(sample, 'is_top_secret', e.target.checked)}/>
+        onChange={(e) => this.handleFieldChanged(sample, 'is_top_secret', e.target.checked)}
+        >Top secret</Checkbox>
       )
     }
   }
 
   moleculeInput(sample) {
     return (
-      <Input type="text" label="Molecule" ref="moleculeInput"
-             buttonAfter={this.structureEditorButton(sample.isMethodDisabled('molecule_iupac_name'))}
-             value={sample.molecule && (sample.molecule.iupac_name || sample.molecule.sum_formular)}
-             disabled={sample.isMethodDisabled('molecule_iupac_name')}
-             readOnly={sample.isMethodDisabled('molecule_iupac_name')}
-             onChange={(e) => this.handleFieldChanged(sample, 'molecule_iupac_name', e.target.value)}
-      />
+      <FormGroup>
+        <ControlLabel>Molecule</ControlLabel>
+        <InputGroup>
+          <FormControl type="text" ref="moleculeInput"
+            value={sample.molecule && (sample.molecule.iupac_name || sample.molecule.sum_formular || '')}
+            disabled={sample.isMethodDisabled('molecule_iupac_name')}
+            readOnly={sample.isMethodDisabled('molecule_iupac_name')}
+            onChange={(e) => this.handleFieldChanged(sample, 'molecule_iupac_name', e.target.value)}
+          />
+          <InputGroup.Button>
+            {this.structureEditorButton(sample.isMethodDisabled('molecule_iupac_name'))}
+          </InputGroup.Button>
+        </InputGroup>
+      </FormGroup>
     )
   }
 
@@ -112,12 +105,15 @@ export default class SampleForm extends React.Component {
 
   textInput(sample, field, label, disabled = false) {
     return (
-      <Input type="text" label={label}
-             value={sample[field]}
-             onChange={(e) => {this.handleFieldChanged(sample, field, e.target.value)}}
-             disabled={disabled || sample.isMethodDisabled(field)}
-             readOnly={disabled || sample.isMethodDisabled(field)}
-      />
+      <FormGroup>
+        <ControlLabel>{label}</ControlLabel>
+        <FormControl type="text"
+          value={sample[field] || ''}
+          onChange={(e) => {this.handleFieldChanged(sample, field, e.target.value)}}
+          disabled={disabled || sample.isMethodDisabled(field)}
+          readOnly={disabled || sample.isMethodDisabled(field)}
+        />
+      </FormGroup>
     )
   }
 
@@ -193,31 +189,26 @@ export default class SampleForm extends React.Component {
      return content;
     } else {
       return (
-        <Input type="text" label="Amount" disabled defaultValue="***" readOnly/>
+        <FormGroup>
+          <ControlLabel>Amount</ControlLabel>
+          <FormControl type="text" disabled defaultValue="***" readOnly/>
+        </FormGroup>
       )
     }
   }
 
   sampleDescription(sample) {
     return (
-      <Input type="textarea" label="Description" ref="descriptionInput"
+      <FormGroup>
+        <ControlLabel>Description</ControlLabel>
+        <FormControl type="textarea"  ref="descriptionInput"
              placeholder={sample.description}
-             value={sample.description}
+             value={sample.description || ''}
              onChange={(e) => this.handleFieldChanged(sample, 'description', e.target.value)}
              rows={2}
              disabled={sample.isMethodDisabled('description')}
         />
-    )
-  }
-
-  sampleSaveButton() {
-    return (
-      <Button bsStyle="warning"
-              className="external-save-btn"
-              onClick={this.props.parent._submitFunction.bind(this.props.parent)}
-              disabled={!this.sampleIsValid()}>
-        {this._submitLabel()}
-      </Button>
+      </FormGroup>
     )
   }
 
@@ -228,10 +219,9 @@ export default class SampleForm extends React.Component {
       <div className="sample-form">
         <Row>
           <Col md={6}>{this.moleculeInput(sample)}</Col>
-          <Col md={5} className="top-secret-checkbox">
+          <Col md={6} className="top-secret-checkbox">
             {this.topSecretCheckbox(sample)}
           </Col>
-          <Col md={1} className="pull-right">{this.sampleSaveButton()}</Col>
         </Row>
 
         <Row>

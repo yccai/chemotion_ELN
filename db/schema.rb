@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160627110544) do
+ActiveRecord::Schema.define(version: 20160809122557) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -112,6 +112,67 @@ ActiveRecord::Schema.define(version: 20160627110544) do
 
   add_index "elemental_compositions", ["sample_id"], name: "index_elemental_compositions_on_sample_id", using: :btree
 
+  create_table "fingerprints", force: :cascade do |t|
+    t.bit      "fp0",          limit: 64
+    t.bit      "fp1",          limit: 64
+    t.bit      "fp2",          limit: 64
+    t.bit      "fp3",          limit: 64
+    t.bit      "fp4",          limit: 64
+    t.bit      "fp5",          limit: 64
+    t.bit      "fp6",          limit: 64
+    t.bit      "fp7",          limit: 64
+    t.bit      "fp8",          limit: 64
+    t.bit      "fp9",          limit: 64
+    t.bit      "fp10",         limit: 64
+    t.bit      "fp11",         limit: 64
+    t.bit      "fp12",         limit: 64
+    t.bit      "fp13",         limit: 64
+    t.bit      "fp14",         limit: 64
+    t.bit      "fp15",         limit: 64
+    t.integer  "num_set_bits", limit: 2
+    t.datetime "created_at",              null: false
+    t.datetime "updated_at",              null: false
+    t.time     "deleted_at"
+  end
+
+  create_table "ketcherails_common_templates", force: :cascade do |t|
+    t.integer  "moderated_by"
+    t.integer  "suggested_by"
+    t.string   "name",                 null: false
+    t.text     "molfile",              null: false
+    t.string   "icon_path"
+    t.string   "sprite_class"
+    t.text     "notes"
+    t.datetime "approved_at"
+    t.datetime "rejected_at"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "template_category_id"
+    t.string   "status"
+  end
+
+  add_index "ketcherails_common_templates", ["moderated_by"], name: "index_ketcherails_common_templates_on_moderated_by", using: :btree
+  add_index "ketcherails_common_templates", ["name"], name: "index_ketcherails_common_templates_on_name", using: :btree
+  add_index "ketcherails_common_templates", ["suggested_by"], name: "index_ketcherails_common_templates_on_suggested_by", using: :btree
+
+  create_table "ketcherails_custom_templates", force: :cascade do |t|
+    t.integer  "user_id",      null: false
+    t.string   "name",         null: false
+    t.text     "molfile",      null: false
+    t.string   "icon_path"
+    t.string   "sprite_class"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "ketcherails_custom_templates", ["user_id"], name: "index_ketcherails_custom_templates_on_user_id", using: :btree
+
+  create_table "ketcherails_template_categories", force: :cascade do |t|
+    t.string   "name",       null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "literatures", force: :cascade do |t|
     t.integer  "reaction_id", null: false
     t.string   "title"
@@ -141,6 +202,7 @@ ActiveRecord::Schema.define(version: 20160627110544) do
     t.datetime "deleted_at"
     t.boolean  "is_partial",             default: false, null: false
     t.float    "exact_molecular_weight"
+    t.string   "cano_smiles"
   end
 
   add_index "molecules", ["deleted_at"], name: "index_molecules_on_deleted_at", using: :btree
@@ -213,6 +275,18 @@ ActiveRecord::Schema.define(version: 20160627110544) do
   add_index "reactions_reactant_samples", ["reaction_id"], name: "index_reactions_reactant_samples_on_reaction_id", using: :btree
   add_index "reactions_reactant_samples", ["sample_id"], name: "index_reactions_reactant_samples_on_sample_id", using: :btree
 
+  create_table "reactions_solvent_samples", force: :cascade do |t|
+    t.integer  "reaction_id"
+    t.integer  "sample_id"
+    t.boolean  "reference"
+    t.float    "equivalent"
+    t.datetime "deleted_at"
+  end
+
+  add_index "reactions_solvent_samples", ["deleted_at"], name: "index_reactions_solvent_samples_on_deleted_at", using: :btree
+  add_index "reactions_solvent_samples", ["reaction_id"], name: "index_reactions_solvent_samples_on_reaction_id", using: :btree
+  add_index "reactions_solvent_samples", ["sample_id"], name: "index_reactions_solvent_samples_on_sample_id", using: :btree
+
   create_table "reactions_starting_material_samples", force: :cascade do |t|
     t.integer  "reaction_id"
     t.integer  "sample_id"
@@ -264,34 +338,13 @@ ActiveRecord::Schema.define(version: 20160627110544) do
     t.float    "density",             default: 1.0,   null: false
     t.float    "melting_point"
     t.float    "boiling_point"
+    t.integer  "fingerprint_id"
   end
 
   add_index "samples", ["deleted_at"], name: "index_samples_on_deleted_at", using: :btree
   add_index "samples", ["identifier"], name: "index_samples_on_identifier", using: :btree
   add_index "samples", ["molecule_id"], name: "index_samples_on_sample_id", using: :btree
   add_index "samples", ["user_id"], name: "index_samples_on_user_id", using: :btree
-
-  create_table "scifinding_credentials", force: :cascade do |t|
-    t.string   "username"
-    t.string   "encrypted_password"
-    t.string   "encrypted_current_token"
-    t.string   "encrypted_refreshed_token"
-    t.datetime "token_expires_at"
-    t.datetime "token_requested_at"
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
-    t.integer  "user_id"
-    t.string   "encrypted_password_iv"
-    t.string   "encrypted_current_token_iv"
-    t.string   "encrypted_refreshed_token_iv"
-  end
-
-  create_table "scifinding_tags", force: :cascade do |t|
-    t.integer  "molecule_id"
-    t.integer  "count"
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
-  end
 
   create_table "screens", force: :cascade do |t|
     t.string   "description"
@@ -317,6 +370,22 @@ ActiveRecord::Schema.define(version: 20160627110544) do
   add_index "screens_wellplates", ["screen_id"], name: "index_screens_wellplates_on_screen_id", using: :btree
   add_index "screens_wellplates", ["wellplate_id"], name: "index_screens_wellplates_on_wellplate_id", using: :btree
 
+  create_table "sync_collections_users", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "collection_id"
+    t.integer "shared_by_id"
+    t.integer "permission_level",       default: 0
+    t.integer "sample_detail_level",    default: 0
+    t.integer "reaction_detail_level",  default: 0
+    t.integer "wellplate_detail_level", default: 0
+    t.integer "screen_detail_level",    default: 0
+    t.string  "fake_ancestry"
+  end
+
+  add_index "sync_collections_users", ["collection_id"], name: "index_sync_collections_users_on_collection_id", using: :btree
+  add_index "sync_collections_users", ["shared_by_id", "user_id", "fake_ancestry"], name: "index_sync_collections_users_on_shared_by_id", using: :btree
+  add_index "sync_collections_users", ["user_id", "fake_ancestry"], name: "index_sync_collections_users_on_user_id_and_fake_ancestry", using: :btree
+
   create_table "users", force: :cascade do |t|
     t.string   "email",                            default: "",                                                    null: false
     t.string   "encrypted_password",               default: "",                                                    null: false
@@ -335,12 +404,30 @@ ActiveRecord::Schema.define(version: 20160627110544) do
     t.string   "last_name",                                                                                        null: false
     t.datetime "deleted_at"
     t.hstore   "counters",                         default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"}, null: false
-    t.string   "name_abbreviation",      limit: 3
+    t.string   "name_abbreviation",      limit: 5
+    t.string   "type",                             default: "Person"
+    t.boolean  "is_templates_moderator",           default: false,                                                 null: false
   end
 
   add_index "users", ["deleted_at"], name: "index_users_on_deleted_at", using: :btree
   add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
   add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
+
+  create_table "users_admins", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "admin_id"
+  end
+
+  add_index "users_admins", ["admin_id"], name: "index_users_admins_on_admin_id", using: :btree
+  add_index "users_admins", ["user_id"], name: "index_users_admins_on_user_id", using: :btree
+
+  create_table "users_groups", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "group_id"
+  end
+
+  add_index "users_groups", ["group_id"], name: "index_users_groups_on_group_id", using: :btree
+  add_index "users_groups", ["user_id"], name: "index_users_groups_on_user_id", using: :btree
 
   create_table "wellplates", force: :cascade do |t|
     t.string   "name"

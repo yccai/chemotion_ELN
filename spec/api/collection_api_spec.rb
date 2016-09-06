@@ -4,16 +4,19 @@ describe Chemotion::CollectionAPI do
   let(:json_options) {
     {
       only: [:id, :label],
-      methods: [:children, :descendant_ids, :permission_level, :shared_by_id, :sample_detail_level, :reaction_detail_level, :wellplate_detail_level, :screen_detail_level, :is_shared]
+      methods: [:children, :descendant_ids, :permission_level, :shared_by_id,
+        :sample_detail_level, :reaction_detail_level, :wellplate_detail_level,
+        :screen_detail_level, :is_shared, :is_locked, :sync_collections_users, :shared_users]
     }
   }
 
   context 'authorized user logged in' do
     let(:user)  { create(:user, first_name: 'Musashi', last_name: 'M') }
     let(:u2)    { create(:user) }
+    let(:group) { create(:group)}
     let!(:c1)   { create(:collection, user: user, is_shared: false) }
     let!(:c2)   { create(:collection, user: user, shared_by_id: user.id, is_shared: true) }
-    let!(:c3)   { create(:collection, is_shared: false) }
+    let!(:c3)   { create(:collection, user: user, is_shared: false) }
     let!(:c4)   { create(:collection, user: user, shared_by_id: u2.id, is_shared: true) }
     let!(:c5)   { create(:collection, shared_by_id: u2.id, is_shared: true) }
 
@@ -88,26 +91,50 @@ describe Chemotion::CollectionAPI do
     describe 'GET /api/v1/collections/roots' do
       it 'returns serialized (unshared) collection roots of logged in user' do
         get '/api/v1/collections/roots'
+        collections = JSON.parse(response.body)['collections']
+        shared_to = collections.map{|c| c.delete("shared_to")}
+        expect(collections).to eq [c1.as_json(json_options),c3.as_json(json_options)]
+        expect(shared_to.compact).to be_empty
+      end
+    end
 
-        expect(JSON.parse(response.body)['collections']).to eq [c1.as_json(json_options)]
+    describe 'GET /api/v1/collections/locked' do
+      it 'returns serialized locked unshared collection roots of logged in user' do
+        get '/api/v1/collections/locked'
+        expect(JSON.parse(response.body)['collections'].map{ |coll| coll["label"]})
+          .to eq ["All","chemotion.net"]
       end
     end
 
     describe 'GET /api/v1/collections/shared_roots' do
       it 'returns serialized (shared) collection roots of logged in user' do
         get '/api/v1/collections/shared_roots'
-
-        expect(JSON.parse(response.body)['collections']).to eq [c2.as_json(json_options)]
+        collections = JSON.parse(response.body)['collections']
+        shared_to = collections.map{|c| c.delete("shared_to")}
+        shared_by = collections.map{|c| c.delete("shared_by")}
+        expect(collections).to eq [c2.as_json(json_options)]
+        expect(shared_to.map{|u| u&&u['id']||nil}).to eq [c2.user.id]
       end
     end
 
     describe 'GET /api/v1/collections/remote_roots' do
       it 'returns serialized (remote) collection roots of logged in user' do
         get '/api/v1/collections/remote_roots'
-
         expect(JSON.parse(response.body)['collections'].first['label']).to eq c4.label
       end
+      context 'with a collection shared to a group' do
+        let(:p2){create(:person)}
+        let!(:g1){ create(:group,users:[user]) }
+        let!(:c6){ create(:collection, user: g1, is_shared: true,shared_by_id:p2.id, is_locked:false) }
+        before {get '/api/v1/collections/remote_roots'}
+        it 'returns serialized (remote) collection roots of logged in user' do
+          expect(JSON.parse(response.body)['collections'].map{|e| e['id']}).to match_array [c4.id,c6.id]
+        end
+      end
     end
+
+
+
 
     describe 'POST /api/v1/collections/unshared' do
       let(:params) {
@@ -134,9 +161,8 @@ describe Chemotion::CollectionAPI do
       let(:w2) { create(:wellplate) }
       let(:sc1) { create(:screen) }
 
-      let!(:params) {
-        {
-          ui_state: {
+      let!(:ui_state) {
+         {
             sample: {
               all: true,
               included_ids: [],
@@ -157,8 +183,22 @@ describe Chemotion::CollectionAPI do
               included_ids: [sc1.id],
               excluded_ids: []
             },
-            currentCollectionId: c1.id
-          },
+            currentCollection: {
+              id:c1.id
+            }
+          }
+      }
+
+      let!(:params) {
+        {
+          ui_state: ui_state,
+          collection_id: c3.id
+        }
+      }
+
+      let!(:params_shared) {
+        {
+          ui_state: ui_state,
           collection_id: c2.id
         }
       }
@@ -176,24 +216,50 @@ describe Chemotion::CollectionAPI do
       end
 
       describe 'PUT /api/v1/collections/elements' do
-        it 'should be able to move elements between collections' do
+        it 'should be able to move elements between unshared collections' do
           put '/api/v1/collections/elements', params
           c1.reload
-          c2.reload
+          c3.reload
           expect(c1.samples).to match_array []
           expect(c1.reactions).to match_array [r2]
           expect(c1.wellplates).to match_array [w2]
           expect(c1.screens).to match_array []
-          expect(c2.samples).to match_array [s1, s2]
-          expect(c2.reactions).to match_array [r1]
-          expect(c2.wellplates).to match_array [w1]
-          expect(c2.screens).to match_array [sc1]
+          expect(c3.samples).to match_array [s1, s2]
+          expect(c3.reactions).to match_array [r1]
+          expect(c3.wellplates).to match_array [w1]
+          expect(c3.screens).to match_array [sc1]
+        end
+        it 'should not be able to move elements to a shared collection' do
+          put '/api/v1/collections/elements', params_shared
+          c1.reload
+          c2.reload
+          expect(c2.samples).to match_array []
+          expect(c2.reactions).to match_array []
+          expect(c2.wellplates).to match_array []
+          expect(c2.screens).to match_array []
+          expect(c1.samples).to match_array [s1, s2]
+          expect(c1.reactions).to match_array [r1, r2]
+          expect(c1.wellplates).to match_array [w1, w2]
+          expect(c1.screens).to match_array [sc1]
         end
       end
 
       describe 'POST /api/v1/collections/elements' do
-        it 'should be able to assign elements to a collection' do
+        it 'should be able to assign elements to an unshared collection' do
           post '/api/v1/collections/elements', params
+          c1.reload
+          c3.reload
+          expect(c1.samples).to match_array [s1, s2]
+          expect(c1.reactions).to match_array [r1, r2]
+          expect(c1.wellplates).to match_array [w1, w2]
+          expect(c1.screens).to match_array [sc1]
+          expect(c3.samples).to match_array [s1, s2]
+          expect(c3.reactions).to match_array [r1]
+          expect(c3.wellplates).to match_array [w1]
+          expect(c3.screens).to match_array [sc1]
+        end
+        it 'should be able to assign elements to a shared collection' do
+          post '/api/v1/collections/elements', params_shared
           c1.reload
           c2.reload
           expect(c1.samples).to match_array [s1, s2]
@@ -222,12 +288,13 @@ describe Chemotion::CollectionAPI do
 
     describe 'PUT /api/v1/collections/shared/:id' do
       let(:params) {
-        {
-          permission_level: 13,
-          sample_detail_level: 5,
-          reaction_detail_level: 2,
-          wellplate_detail_level: 1,
-          screen_detail_level: 5
+        {collection_attributes: {
+            permission_level: 13,
+            sample_detail_level: 5,
+            reaction_detail_level: 2,
+            wellplate_detail_level: 1,
+            screen_detail_level: 5
+          }
         }
       }
 
@@ -339,6 +406,16 @@ describe Chemotion::CollectionAPI do
                   included_ids: [],
                   excluded_ids: [],
                   collection_id: 2
+                },
+                wellplate: {
+                  all: false,
+                  included_ids: [],
+                  excluded_ids: []
+                },
+                screen: {
+                  all: false,
+                  included_ids: [],
+                  excluded_ids: []
                 }
               }
             }
@@ -361,6 +438,10 @@ describe Chemotion::CollectionAPI do
   end
 
   context 'no user logged in' do
+    before do
+      allow_any_instance_of(WardenAuthentication).to receive(:current_user).and_return(nil)
+    end
+
     describe 'GET /api/v1/collections/roots' do
       it 'responds with 401 status code' do
         get '/api/v1/collections/roots'

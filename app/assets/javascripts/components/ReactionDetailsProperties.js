@@ -1,8 +1,14 @@
 import React, {Component} from 'react';
-import {Row, Col, Input, ListGroupItem, ListGroup} from 'react-bootstrap'
+import {Row, Col, FormGroup, ControlLabel, FormControl,
+        ListGroupItem, ListGroup, InputGroup, Button,
+        OverlayTrigger, Tooltip} from 'react-bootstrap'
 import Select from 'react-select'
-import {solventOptions, purificationOptions, statusOptions, dangerousProductsOptions}
-  from './staticDropdownOptions/options';
+import {solventOptions, purificationOptions, statusOptions,
+        dangerousProductsOptions} from './staticDropdownOptions/options';
+import ReactionDetailsMainProperties from './ReactionDetailsMainProperties';
+import Clipboard from 'clipboard';
+import moment from 'moment';
+import momentPreciseRange from 'moment-precise-range-plugin';
 
 export default class ReactionDetailsProperties extends Component {
 
@@ -10,90 +16,67 @@ export default class ReactionDetailsProperties extends Component {
     super(props);
     const {reaction} = props;
     this.state = { reaction };
+    this.clipboard = new Clipboard('.clipboardBtn');
+  }
+
+  componentDidMount() {
+    this.calcTimeDiff()
   }
 
   componentWillReceiveProps(nextProps) {
-    const {reaction} = this.state;
     const nextReaction = nextProps.reaction;
     this.setState({ reaction: nextReaction });
   }
 
-  handleInputChange(type, event) {
-    const {onReactionChange} = this.props;
-    const {value} = event.target;
-    const {reaction} = this.state;
-    let options = {};
-
-    switch (type) {
-      case 'name':
-        reaction.name = value;
-        break;
-      case 'observation':
-        reaction.observation = value;
-        break;
-      case 'status':
-        reaction.status = value;
-        break;
-      case 'description':
-        reaction.description = value;
-        break;
-      case 'purification':
-        reaction.purification = value;
-        break;
-      case 'tlc_solvents':
-        reaction.tlc_solvents = value;
-        break;
-      case 'rfValue':
-        reaction.rf_value = value;
-        break;
-      case 'timestampStart':
-        reaction.timestamp_start = value;
-        break;
-      case 'timestampStop':
-        reaction.timestamp_stop = value;
-        break;
-      case 'tlcDescription':
-        reaction.tlc_description = value;
-        break;
-      case 'temperature':
-        reaction.temperature = value;
-        options = {schemaChanged: true}
-        break;
-      case 'dangerousProducts':
-        reaction.dangerous_products = value;
-        break;
-        case 'solvent':
-          reaction.solvent = value;
-          options = {schemaChanged: true}
-          break;
-    }
-
-    onReactionChange(reaction, options);
+  componentWillUnmount() {
+    this.clipboard.destroy()
   }
 
   handleMultiselectChange(type, selectedOptions) {
     const values = selectedOptions.map(option => option.value);
     const wrappedEvent = {target: {value: values}};
-    this.handleInputChange(type, wrappedEvent)
+    this.props.onInputChange(type, wrappedEvent)
+  }
+
+  setCurrentTime(type) {
+    const currentTime = new Date().toLocaleString('en-GB').split(', ').join(' ')
+    const {reaction} = this.state
+    if(type === 'start') {
+      reaction.timestamp_start = currentTime
+    } else {
+      reaction.timestamp_stop = currentTime
+    }
+    this.setState({ reaction: reaction })
+    this.calcTimeDiff()
+  }
+
+  calcTimeDiff() {
+    const {reaction} = this.state
+    if(reaction.timestamp_start && reaction.timestamp_stop) {
+      const start = moment(reaction.timestamp_start, "DD-MM-YYYY HH:mm:ss")
+      const stop = moment(reaction.timestamp_stop, "DD-MM-YYYY HH:mm:ss")
+      reaction.duration = moment.preciseDiff(start, stop)
+      this.setState({ reaction: reaction })
+    }
+  }
+
+  clipboardTooltip() {
+    return(
+      <Tooltip id="copy_duration_to_clipboard">copy to clipboard</Tooltip>
+    )
   }
 
   render() {
     const {reaction} = this.state;
     return (
+      <div>
+      <ReactionDetailsMainProperties
+        reaction={reaction}
+        onInputChange={(type, event) => this.props.onInputChange(type, event)} />
       <ListGroup>
         <ListGroupItem>
-          <h4 className="list-group-item-heading" ></h4>
           <Row>
-            <Col md={6}>
-              <Input
-                type="text"
-                label="Name"
-                value={reaction.name}
-                placeholder="Name..."
-                disabled={reaction.isMethodDisabled('name')}
-                onChange={event => this.handleInputChange('name', event)}/>
-            </Col>
-            <Col md={6}>
+            <Col md={4}>
               <label>Status</label>
               <Select
                 name='status'
@@ -103,67 +86,85 @@ export default class ReactionDetailsProperties extends Component {
                 disabled={reaction.isMethodDisabled('status')}
                 onChange={event => {
                   const wrappedEvent = {target: {value: event}};
-                  this.handleInputChange('status', wrappedEvent)
+                  this.props.onInputChange('status', wrappedEvent)
                 }}
                 />
             </Col>
+            <Col md={4}>
+              <FormGroup>
+                <ControlLabel>Start</ControlLabel>
+                <InputGroup>
+                  <FormControl
+                    type="text"
+                    value={reaction.timestamp_start || ''}
+                    disabled={reaction.isMethodDisabled('timestamp_start')}
+                    placeholder="DD/MM/YYYY hh:mm:ss"
+                    onChange={event => this.props.onInputChange('timestampStart', event)}/>
+                  <InputGroup.Button>
+                    <Button active style={ {padding: '6px'}} onClick={e => this.setCurrentTime('start')} >
+                      <i className="fa fa-clock-o"></i>
+                    </Button>
+                  </InputGroup.Button>
+                </InputGroup>
+              </FormGroup>
+            </Col>
+            <Col md={4}>
+              <FormGroup>
+                <ControlLabel>Stop</ControlLabel>
+                <InputGroup>
+                  <FormControl
+                    type="text"
+                    value={reaction.timestamp_stop || ''}
+                    disabled={reaction.isMethodDisabled('timestamp_stop')}
+                    placeholder="DD/MM/YYYY hh:mm:ss"
+                    onChange={event => this.props.onInputChange('timestampStop', event)}/>
+                  <InputGroup.Button>
+                    <Button active style={ {padding: '6px'}} onClick={e => this.setCurrentTime('stop')} >
+                      <i className="fa fa-clock-o"></i>
+                    </Button>
+                  </InputGroup.Button>
+                </InputGroup>
+              </FormGroup>
+            </Col>
           </Row>
+
+          <Row>
+            <Col md={4}>
+            </Col>
+            <Col md={8}>
+              <FormGroup>
+                <InputGroup>
+                  <FormControl
+                    type="text"
+                    value={reaction.duration || ''}
+                    disabled="true"
+                    placeholder="Duration" />
+                  <InputGroup.Button>
+                    <Button active onClick={e => this.calcTimeDiff()} >
+                      <i className="fa fa-hourglass-end"></i>
+                    </Button>
+                    <OverlayTrigger placement="bottom" overlay={this.clipboardTooltip()}>
+                      <Button active className="clipboardBtn" data-clipboard-text={reaction.duration || " "} >
+                        <i className="fa fa-clipboard"></i>
+                      </Button>
+                    </OverlayTrigger>
+                  </InputGroup.Button>
+                </InputGroup>
+              </FormGroup>
+            </Col>
+          </Row>
+
           <Row>
             <Col md={12}>
-              <Input
-                type="textarea"
-                label="Description"
-                value={reaction.description}
-                disabled={reaction.isMethodDisabled('description')}
-                placeholder="Description..."
-                onChange={event => this.handleInputChange('description', event)}/>
-            </Col>
-          </Row>
-        </ListGroupItem>
-        <ListGroupItem>
-          <Row>
-            <Col md={4}>
-              <label>Solvent</label>
-              <Select
-                name='solvent'
-                multi={false}
-                options={solventOptions}
-                value={reaction.solvent}
-                disabled={reaction.isMethodDisabled('solvent')}
-                onChange={event => {
-                  const wrappedEvent = {target: {value: event}};
-                  this.handleInputChange('solvent', wrappedEvent)
-                }}
-              />
-            </Col>
-            <Col md={4}>
-              <Input
-                type="text"
-                label="Start"
-                value={reaction.timestamp_start}
-                disabled={reaction.isMethodDisabled('timestamp_start')}
-                placeholder="Start..."
-                onChange={event => this.handleInputChange('timestampStart', event)}/>
-            </Col>
-            <Col md={4}>
-              <Input
-                type="text"
-                label="Stop"
-                value={reaction.timestamp_stop}
-                disabled={reaction.isMethodDisabled('timestamp_stop')}
-                placeholder="Stop..."
-                onChange={event => this.handleInputChange('timestampStop', event)}/>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={12}>
-              <Input
-                type="textarea"
-                label="Observation"
-                value={reaction.observation}
-                disabled={reaction.isMethodDisabled('observation')}
-                placeholder="Observation..."
-                onChange={event => this.handleInputChange('observation', event)}/>
+              <FormGroup>
+                <ControlLabel>Observation</ControlLabel>
+                <FormControl
+                  componentClass="textarea"
+                  value={reaction.observation || ''}
+                  disabled={reaction.isMethodDisabled('observation')}
+                  placeholder="Observation..."
+                  onChange={event => this.props.onInputChange('observation', event)}/>
+              </FormGroup>
             </Col>
           </Row>
           <Row>
@@ -197,46 +198,49 @@ export default class ReactionDetailsProperties extends Component {
           <h4 className="list-group-item-heading" >TLC-Control</h4>
           <Row>
             <Col md={6}>
-              <Input
-                type="text"
-                label="Solvents (parts)"
-                value={reaction.tlc_solvents}
-                disabled={reaction.isMethodDisabled('tlc_solvents')}
-                placeholder="Solvents as parts..."
-                onChange={event => this.handleInputChange('tlc_solvents', event)}/>
+              <FormGroup>
+                <ControlLabel>Solvents (parts)</ControlLabel>
+                <FormControl
+                  type="text"
+                  value={reaction.tlc_solvents || ''}
+                  disabled={reaction.isMethodDisabled('tlc_solvents')}
+                  placeholder="Solvents as parts..."
+                  onChange={event => this.props.onInputChange('tlc_solvents', event)}/>
+              </FormGroup>
             </Col>
-            <Col md={3}>
-              <Input
-                type="text"
-                label="Rf-Value"
-                value={reaction.rf_value}
-                disabled={reaction.isMethodDisabled('rf_value')}
-                placeholder="Rf-Value..."
-                onChange={event => this.handleInputChange('rfValue', event)}/>
-            </Col>
-            <Col md={3}>
-              <Input
-                type="text"
-                label="Temperature"
-                value={reaction.temperature}
-                disabled={reaction.isMethodDisabled('temperature')}
-                placeholder="Temperature..."
-                onChange={event => this.handleInputChange('temperature', event)}/>
+            <Col md={6}>
+              <FormGroup>
+                <ControlLabel>Rf-Value</ControlLabel>
+                <FormControl
+                  type="text"
+                  value={reaction.rf_value || ''}
+                  disabled={reaction.isMethodDisabled('rf_value')}
+                  placeholder="Rf-Value..."
+                  onChange={event => this.props.onInputChange('rfValue', event)}/>
+              </FormGroup>
             </Col>
           </Row>
           <Row>
             <Col md={12}>
-              <Input
-                type="textarea"
-                label="TLC-Description"
-                value={reaction.tlc_description}
-                disabled={reaction.isMethodDisabled('tlc_description')}
-                placeholder="TLC-Description..."
-                onChange={event => this.handleInputChange('tlcDescription', event)}/>
+              <FormGroup>
+                <ControlLabel>TLC-Description</ControlLabel>
+                <FormControl
+                  componentClass="textarea"
+                  value={reaction.tlc_description || ''}
+                  disabled={reaction.isMethodDisabled('tlc_description')}
+                  placeholder="TLC-Description..."
+                  onChange={event => this.props.onInputChange('tlcDescription', event)}/>
+              </FormGroup>
             </Col>
           </Row>
         </ListGroupItem>
       </ListGroup>
+      </div>
     );
   }
+}
+
+ReactionDetailsProperties.propTypes = {
+  reaction: React.PropTypes.object,
+  onInputChange: React.PropTypes.func
 }
