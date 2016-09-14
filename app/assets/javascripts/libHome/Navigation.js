@@ -1,37 +1,66 @@
 import React from 'react';
-import {Nav, Navbar, NavDropdown, MenuItem} from 'react-bootstrap';
+import {Nav, Navbar, NavItem} from 'react-bootstrap';
 import SVG from 'react-inlinesvg'
+
 import UserAuth from '../components/UserAuth';
+import UserStore from '../components/stores/UserStore';
+import UserActions from '../components/actions/UserActions';
+import DocumentHelper from '../components/utils/DocumentHelper';
+
+import NavHead from '../libHome/NavHead'
+import NavNewSession from './NavNewSession'
 
 export default class Navigation extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      currentUser: null
+    }
+    this.onChange = this.onChange.bind(this)
+  }
+  componentDidMount() {
+    UserStore.listen(this.onChange);
+    UserActions.fetchCurrentUser();
   }
 
+  componentWillUnmount() {
+    UserStore.unlisten(this.onChange);
+  }
+
+  onChange(state) {
+    this.setState({
+      currentUser: state.currentUser
+    });
+  }
+
+  token(){
+    return DocumentHelper.getMetaContent("csrf-token")
+  }
 
   complatLogo(){
     return <div ><SVG src="images/complat_logo.svg"  className='hp-nav-logo' /></div>
   }
-  brandDropDown() {
-    return (
-      <NavDropdown title={this.complatLogo()}  id="bg-nested-dropdown-brand">
-        <MenuItem eventKey="11" href="http://www.chemotion.net" target="_blank">Chemotion repository</MenuItem>
-      </NavDropdown>
-    )
-  }
+
 
   render() {
-    return (
-      <Navbar  fluid >
-        <Navbar.Header>
-          <Navbar.Brand>
-            {this.complatLogo()}
-          </Navbar.Brand>
-        </Navbar.Header>
-
-        <UserAuth/>
-
-      </Navbar>
+    return (this.state.currentUser
+      ? <Navbar fluid>
+          <Navbar.Header>
+            <Nav>  <NavItem href="/home" >{this.complatLogo()}</NavItem></Nav>
+            <Navbar.Brand>
+              <NavHead/>
+            </Navbar.Brand>
+          </Navbar.Header>
+          <UserAuth/>
+        </Navbar>
+      : <Navbar  fluid>
+          <Navbar.Header>
+            <Navbar.Brand>
+              <NavHead/>
+            </Navbar.Brand>
+          </Navbar.Header>
+          <NavNewSession authenticityToken={this.token()}/>
+        </Navbar>
     )
   }
 }
