@@ -4,7 +4,7 @@ import SVG from 'react-inlinesvg'
 
 const NavHead = () => {
   let isHome = window.location.href.match(/\/home/)
-  let title = <div ><SVG src="images/complat_logo.svg"  className='hp-nav-logo' /></div>
+  let title = <SVG src="images/complat_logo.svg"  className='hp-nav-logo' />
   return(
     <Navbar.Brand>
       <NavDropdown title={title} className="navig-brand" id="bg-nested-dropdown-brand">

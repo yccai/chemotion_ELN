@@ -1,6 +1,6 @@
 import React, {Component} from 'react'
 import ReactDOM from 'react-dom'
-import { Grid, Row} from 'react-bootstrap';
+import { Grid, Row, Col} from 'react-bootstrap';
 import SVG from 'react-inlinesvg'
 
 import Navigation from './Navigation'
@@ -15,16 +15,14 @@ class Home extends Component {
 
     return (
       <Grid fluid>
-        <Row className="card-navigation">
+        <Row className="hp-card-navigation">
           <Navigation/>
         </Row>
 
-        <Row style={{overflowX: 'hidden', position: 'relative', top: 45}}>
+        <Row className='hp-card-content'>
           <img className='hp-bg-img' src="images/boxes_10_blue.jpg" />
           <div className='hp-sub-title-block'>
-            <div className='hp-cp-logo'>
-              <SVG src="images/complat_logo.svg"   />
-            </div>
+            <SVG src="images/complat_logo.svg"  className='hp-cp-logo' />
             <div className='hp-sub-title'>
               The Service Facility for Compound Storage, Management, and Sharing
             </div>

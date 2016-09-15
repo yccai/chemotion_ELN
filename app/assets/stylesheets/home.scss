@@ -6,35 +6,14 @@
   left: 5%;
   z-index:2;
   max-width: 90%;
+  max-height: 75%;
   padding: 20px;
-}
-
-.hp-sub-title {
-  display: table-cell;
-  //text-align: center;
-  color: #4dc5ea;
-  font: italic 30px/40px bold arial, sans-serif;
-  text-shadow: 1px 1px grey;
-  font-weight: 900;
-  padding: 20px;
-  vertical-align: top;
-}
-
-.hp-cp-logo {
-  margin-right: 35px;
-  display: table-cell;
-  max-width: 30%;
-  vertical-align: middle;
 }
 
 .hp-nav-logo svg {
   max-height: 30px;
-  max-width: 80px
-}
-
-.hp-bg-img {
-  max-width: 150%;
-
+  max-width: 80px;
+  width:80px;
 }
 
 .tab-title {
@@ -50,16 +29,135 @@
   word-wrap: break-word;
 }
 
+.hp-sub-title {
+  display: table-cell;
+  color: grey;// #4dc5ea;
+  font: italic 200%/150% bold arial, sans-serif;
+  font-weight: 900;
+  padding: 20px;
+  vertical-align: top;
+}
+
+.hp-cp-logo {
+  margin-right: 35px;
+  display: table-cell;
+  max-width: 30%;
+  vertical-align: middle;
+}
+
+.hp-cp-logo svg {
+  max-width: 100%;
+  max-height: 40px;
+  width: 100%;
+}
+
+.hp-bg-img {
+  max-width: 150%;
+  max-height: 35%;
+}
+
+.hp-card-content {
+  overflow-x: hidden;
+  position: relative;
+  //top: 45px;
+}
+
 @media only screen and (min-width: 1366px) and (min-height: 500px) {
+
   .hp-bg-img {
     max-width: 100%;
-
+    max-height: 35%;
   }
+
+  .hp-sub-title {
+    display: table-cell;
+    color: grey;// #4dc5ea;
+    font: italic 200%/150% bold arial, sans-serif;
+    font-weight: 900;
+    padding: 20px;
+    vertical-align: top;
+  }
+
+  .hp-cp-logo {
+    margin-right: 35px;
+    display: table-cell;
+    max-width: 30%;
+    vertical-align: middle;
+  }
+
+  .hp-cp-logo svg {
+    max-width: 100%;
+    max-height: 200px;
+    width: 100%;
+  }
+
 }
 
 @media only screen and (min-width: 1144px) and (max-width: 1365px) and (min-height: 500px) {
-  .hp-bg-img {
-    max-width: 100%;
 
+  .hp-bg-img {
+    max-width: 130%;
+    max-height: 35%;
   }
+
+  .hp-sub-title {
+    display: table-cell;
+    color: grey;// #4dc5ea;
+    font: italic 150%/100% bold arial, sans-serif;
+    font-weight: 900;
+    padding: 20px;
+    vertical-align: top;
+  }
+
+  .hp-cp-logo {
+    margin-right: 35px;
+    display: table-cell;
+    max-width: 30%;
+    vertical-align: middle;
+  }
+
+  .hp-cp-logo svg {
+    max-width: 100%;
+    max-height: 100px;
+    width: 100%;
+  }
+
+}
+
+@media only screen and (max-width: 1144px)  {
+
+  .hp-bg-img {
+    max-width: 130%;
+    max-height: 35%;
+  }
+
+  .hp-sub-title {
+    display: none;
+  }
+
+  .hp-cp-logo {
+    display: table-cell;
+  }
+  .hp-cp-logo svg {
+    max-width: 100%;
+    max-height: 40px;
+    width: 100%;
+  }
+
+}
+
+@media only screen and (min-height: 550px) {
+  .hp-card-navigation {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 5;
+  }
+
+  .hp-card-content {
+    overflow-x: hidden;
+    position: relative;
+    top: 45px;
+  }
+
 }
