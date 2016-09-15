@@ -1,14 +1,14 @@
 import React from 'react';
-import {Nav, Navbar, NavItem} from 'react-bootstrap';
+import { Navbar} from 'react-bootstrap';
 import SVG from 'react-inlinesvg'
 
-import UserAuth from '../components/UserAuth';
 import UserStore from '../components/stores/UserStore';
 import UserActions from '../components/actions/UserActions';
 import DocumentHelper from '../components/utils/DocumentHelper';
 
 import NavHead from '../libHome/NavHead'
 import NavNewSession from './NavNewSession'
+import UserAuth from './UserAuth'
 
 export default class Navigation extends React.Component {
   constructor(props) {
@@ -46,7 +46,6 @@ export default class Navigation extends React.Component {
     return (this.state.currentUser
       ? <Navbar fluid>
           <Navbar.Header>
-            <Nav>  <NavItem href="/home" >{this.complatLogo()}</NavItem></Nav>
             <Navbar.Brand>
               <NavHead/>
             </Navbar.Brand>

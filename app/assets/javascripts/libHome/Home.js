@@ -1,27 +1,25 @@
 import React, {Component} from 'react'
 import ReactDOM from 'react-dom'
-import { Grid, Row, Col} from 'react-bootstrap';
+import { Grid, Row} from 'react-bootstrap';
 import SVG from 'react-inlinesvg'
 
 import Navigation from './Navigation'
-import LoreIpsum from './LoreIpsum'
+import TabsMenu from './TabsMenu'
 
 class Home extends Component {
   constructor(props) {
     super();
-
   }
 
   render() {
 
     return (
-
       <Grid fluid>
         <Row className="card-navigation">
           <Navigation/>
         </Row>
 
-        <Row style={{overflowX: 'hidden'}}>
+        <Row style={{overflowX: 'hidden', position: 'relative', top: 45}}>
           <img className='hp-bg-img' src="images/boxes_10_blue.jpg" />
           <div className='hp-sub-title-block'>
             <div className='hp-cp-logo'>
@@ -34,13 +32,7 @@ class Home extends Component {
         </Row>
 
         <Row>
-
-          <Col md={2}></Col>
-
-          <Col md={10}>
-            <LoreIpsum/>
-          </Col>
-
+          <TabsMenu/>
         </Row>
 
       </Grid>

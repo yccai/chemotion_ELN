@@ -1,14 +1,12 @@
 .hp-sub-title-block {
-  //display: inline-block;
   border-radius: 30px;
   background-color: white;
-  //text-align: center;
-  position: relative;
-  top: -200px;
-  padding: 20px;
+  position: absolute;;
+  top: 20%;
+  left: 5%;
   z-index:2;
-  margin: auto;
   max-width: 90%;
+  padding: 20px;
 }
 
 .hp-sub-title {
@@ -16,14 +14,14 @@
   //text-align: center;
   color: #4dc5ea;
   font: italic 30px/40px bold arial, sans-serif;
-  //text-shadow: 2px 2px grey;
+  text-shadow: 1px 1px grey;
   font-weight: 900;
   padding: 20px;
   vertical-align: top;
 }
 
 .hp-cp-logo {
-  margin-right: 30px;
+  margin-right: 35px;
   display: table-cell;
   max-width: 30%;
   vertical-align: middle;
@@ -38,6 +36,20 @@
   max-width: 150%;
 
 }
+
+.tab-title {
+  color: #4dc5ea;
+  font-weight: 900;
+  font-size: 1.3em;
+  background-color: white;
+  border-radius: 30px;
+}
+.tab-home {
+  margin:auto;
+  width: 50%;
+  word-wrap: break-word;
+}
+
 @media only screen and (min-width: 1366px) and (min-height: 500px) {
   .hp-bg-img {
     max-width: 100%;
