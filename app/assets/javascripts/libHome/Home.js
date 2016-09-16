@@ -32,6 +32,7 @@ class Home extends Component {
         <Row>
           <TabsMenu/>
         </Row>
+        
 
       </Grid>
     )

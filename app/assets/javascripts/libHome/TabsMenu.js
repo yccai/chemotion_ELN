@@ -13,10 +13,10 @@ const TabsMenu = () => {
   return(
     <Tabs  justified defaultActiveKey={1} id='Home-menu' >
       <Tab eventKey={1} title={titleIt("Home")}><TabHome/></Tab>
-      <Tab eventKey={2} title={titleIt("Take Part")}><TabTakePart/></Tab>
-      <Tab eventKey={3} title={titleIt("Chemical Services")} ><TabChemical/></Tab>
-      <Tab eventKey={4} title={titleIt("Screening Services")}><TabScreening/></Tab>
-      <Tab eventKey={5} title={titleIt("About ComPlat")}><TabAbout/></Tab>
+      <Tab eventKey={2} title={titleIt("Take Part")} disabled><TabTakePart/></Tab>
+      <Tab eventKey={3} title={titleIt("Chemical Services")} disabled><TabChemical/></Tab>
+      <Tab eventKey={4} title={titleIt("Screening Services")} disabled><TabScreening/></Tab>
+      <Tab eventKey={5} title={titleIt("About ComPlat")} disabled><TabAbout/></Tab>
       <Tab eventKey={6} title={titleIt("Contact Us")}><TabContact/></Tab>
     </Tabs>
   )
