@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navbar} from 'react-bootstrap';
+import { Navbar, Nav, NavItem} from 'react-bootstrap';
 import SVG from 'react-inlinesvg'
 
 import UserStore from '../components/stores/UserStore';
@@ -50,6 +50,10 @@ export default class Navigation extends React.Component {
               <NavHead/>
             </Navbar.Brand>
           </Navbar.Header>
+          <Nav>
+            <NavItem>My Compound Activities</NavItem>
+            <NavItem>My Screening Activities</NavItem>
+          </Nav>
           <UserAuth/>
         </Navbar>
       : <Navbar  fluid>
