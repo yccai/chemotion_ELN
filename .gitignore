@@ -22,9 +22,12 @@
 
 /public/simulations/nmrdb/*
 !/public/simulations/nmrdb/.keep
+/public/images/stylesheets/*
+!/public/images/stylesheets/.keep
 
 /public/images/molecules/*
 !/public/images/molecules/.keep
+
 
 /public/images/reactions/*
 !/public/images/reactions/.keep
