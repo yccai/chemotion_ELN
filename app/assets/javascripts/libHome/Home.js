@@ -1,16 +1,35 @@
 import React, {Component} from 'react'
 import ReactDOM from 'react-dom'
-import { Grid, Row, Col} from 'react-bootstrap';
+import { Grid, Row} from 'react-bootstrap';
 import SVG from 'react-inlinesvg'
 
+import HomeStore from './stores/HomeStore'
 import Navigation from './Navigation'
 import TabsMenu from './TabsMenu'
+import MyActivitiesModal from './MyActivitiesModal'
 
 class Home extends Component {
   constructor(props) {
     super();
+    this.state={
+      showMyActivities: false,
+    }
+    this.handleHomeStoreChange = this.handleHomeStoreChange.bind(this)
   }
 
+  componentDidMount() {
+    HomeStore.listen(this.handleHomeStoreChange);
+  }
+
+  componentWillUnmount() {
+    HomeStore.unlisten(this.handleHomeStoreChange);
+  }
+
+  handleHomeStoreChange(state) {
+    if(this.state.showMyActivities != state.showMyActivities) {
+      this.setState({showMyActivities: state.showMyActivities});
+    }
+  }
   render() {
 
     return (
@@ -34,6 +53,7 @@ class Home extends Component {
         </Row>
         
 
+        <MyActivitiesModal/>
       </Grid>
     )
   }

@@ -9,6 +9,8 @@ import DocumentHelper from '../components/utils/DocumentHelper';
 import NavHead from '../libHome/NavHead'
 import NavNewSession from './NavNewSession'
 import UserAuth from './UserAuth'
+//import HomeStore from './stores/HomeStore'
+import HomeActions from './actions/HomeActions'
 
 export default class Navigation extends React.Component {
   constructor(props) {
@@ -18,6 +20,7 @@ export default class Navigation extends React.Component {
     }
     this.onChange = this.onChange.bind(this)
   }
+
   componentDidMount() {
     UserStore.listen(this.onChange);
     UserActions.fetchCurrentUser();
@@ -41,6 +44,10 @@ export default class Navigation extends React.Component {
     return <div ><SVG src="images/complat_logo.svg"  className='hp-nav-logo' /></div>
   }
 
+  handleSelectMyActivities(eventKey){
+    HomeActions.selectMyActivities(eventKey)
+    console.log(eventKey);
+  }
 
   render() {
     return (this.state.currentUser
@@ -50,9 +57,9 @@ export default class Navigation extends React.Component {
               <NavHead/>
             </Navbar.Brand>
           </Navbar.Header>
-          <Nav>
-            <NavItem>My Compound Activities</NavItem>
-            <NavItem>My Screening Activities</NavItem>
+          <Nav onSelect={this.handleSelectMyActivities}>
+            <NavItem eventKey='Compound' >My Compound Activities</NavItem>
+            <NavItem eventKey='Screening'>My Screening Activities</NavItem>
           </Nav>
           <UserAuth/>
         </Navbar>
