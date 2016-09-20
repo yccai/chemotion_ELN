@@ -1,6 +1,6 @@
 import React from 'react';
 import {Button, ButtonToolbar, Input} from 'react-bootstrap';
-import Dropzone from 'react-dropzone';
+import Dropzone from 'react-dropzone'
 
 
 import NotificationActions from '../components/actions/NotificationActions';
