@@ -1,3 +1,5 @@
+require 'open-uri'
+
 module Chemotion
   class SampleAPI < Grape::API
     include Grape::Kaminari
@@ -134,16 +136,10 @@ module Chemotion
       desc "Upload attachments"
       post 'upload_dataset_attachments' do
         params.each do |file_id, file|
-          if tempfile = file.tempfile
+            if tempfile = file.tempfile
             begin
-              upload_path = File.join('uploads', 'attachments', "#{file_id}#{File.extname(tempfile)}")
-              upload_dir = File.join('uploads', 'attachments')
-              thumbnail_dir = File.join('uploads', 'thumbnails')
-              FileUtils.mkdir_p(upload_dir) unless Dir.exist?(upload_dir)
-              FileUtils.mkdir_p(thumbnail_dir) unless Dir.exist?(thumbnail_dir)
-              FileUtils.cp(tempfile.path, upload_path)
-              thumbnail_path = Thumbnailer.create(upload_path)
-              FileUtils.mv(thumbnail_path, File.join('uploads', 'thumbnails', "#{file_id}.png"))
+              storage = Filesystem.new
+              storage.temp(file_id, IO.binread(tempfile))
             ensure
               tempfile.close
               tempfile.unlink   # deletes the temp file
@@ -164,12 +160,17 @@ module Chemotion
         content_type "application/octet-stream"
         header['Content-Disposition'] = "attachment; filename=#{filename}"
         env['api.format'] = :binary
-        File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
+        #File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
+
+        attachment = Attachment.find_by identifier: file_id
+        storage = Filesystem.new
+        storage.read(current_user, attachment)
       end
 
       module SampleUpdator
 
         def self.updated_embedded_analyses(analyses)
+
           Array(analyses).map do |ana|
             {
               id: ana.id,
@@ -181,6 +182,7 @@ module Chemotion
               description: ana.description,
               datasets: Array(ana.datasets).map do |dataset|
                 {
+
                   id: dataset.id,
                   type: dataset.type,
                   name: dataset.name,
@@ -206,7 +208,78 @@ module Chemotion
             }
           end
         end
-      end
+
+        def self.updated_analyses(user, sample, analyses)
+          root_container = sample.container
+
+          Array(analyses).map do |ana|
+            if Container.exists?(:id => ana.id)
+              ana_container = Container.find_by id: ana.id
+              ana_container.name = ana.name
+            else
+              #New entrie
+              ana_container = Container.create! :name => ana.name, :parent => root_container
+              ana_container.container_type = ana.type
+            end
+            ana_container.save!
+            {
+              id: ana_container.id,
+              type: ana_container.container_type,
+              name: ana.name,
+              kind: ana.kind,
+              status: ana.status,
+              content: ana.content,
+              description: ana.description,
+              #Datasets
+              dataset: Array(ana.datasets).map do |dataset|
+                if Container.exists?(:id => dataset.id)
+                  data_container = Container.find_by id: dataset.id
+                  data_container.name = dataset.name
+                else
+                 #New entrie
+                 data_container = Container.create! :name => dataset.name, :parent => ana_container
+                 data_container.container_type = dataset.type
+                end
+                data_container.save!
+                {
+                    id: data_container.id,
+                    type: data_container.container_type,
+                    name: dataset.name,
+                    instrument: dataset.instrument,
+                    description: dataset.description,
+                    #Attachments
+                    attachments: Array(dataset.attachments).map do |attachment|
+                      attachment_link = Attachment.where(id: attachment.id).first_or_create
+                      attachment_link.filename = attachment.name
+                      if(attachment.is_new)
+                        storage = Filesystem.new
+                        storage.move_from_temp_to_storage(user, attachment.file.id)
+                        #Speichern wo es liegt
+                      end
+                      attachment_link.container = data_container
+                      attachment_link.save!
+                      if(attachment.file)
+                        {
+                          id: attachment_link.id,
+                          name: attachment.name,
+                          filename: attachment.file.id
+                        }
+                      else
+                        {
+                          id: attachment_link.id,
+                          name: attachment.name,
+                          filename: attachment.filename
+                        }
+                      end
+                    end
+                }
+              end
+            }
+          end
+        end
+
+      end #module
+
 
       desc "Update sample by id"
       params do
@@ -241,8 +314,8 @@ module Chemotion
 
         put do
           attributes = declared(params, include_missing: false)
-          embedded_analyses = SampleUpdator.updated_embedded_analyses(params[:analyses])
-          attributes.merge!(analyses: embedded_analyses)
+          #embedded_analyses = SampleUpdator.updated_embedded_analyses(params[:analyses])
+          #attributes.merge!(analyses: embedded_analyses)
 
           # otherwise ActiveRecord::UnknownAttributeError appears
           attributes[:elemental_compositions].each do |i|
@@ -258,8 +331,11 @@ module Chemotion
           end
 
           if sample = Sample.find(params[:id])
+            embedded_analyses = SampleUpdator.updated_analyses(current_user, sample, params[:analyses])
+            attributes.merge!(analyses: embedded_analyses)
             sample.update!(attributes)
           end
+
           {sample: ElementPermissionProxy.new(current_user, sample, user_ids).serialized}
         end
       end
@@ -337,7 +413,15 @@ module Chemotion
         all_coll = Collection.get_all_collection_for_user(current_user.id)
         sample.collections << all_coll
 
+        root_container = Container.new
+        root_container.name = "root"
+        root_container.save!
+
+        sample.container = root_container
+
         sample.save!
+
+
 
         sample
       end
