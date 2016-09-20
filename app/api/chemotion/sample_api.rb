@@ -133,22 +133,34 @@ module Chemotion
       desc "Upload attachments"
       post 'upload_dataset_attachments' do
         params.each do |file_id, file|
-          if tempfile = file.tempfile
+            if tempfile = file.tempfile
             begin
-              upload_path = File.join('uploads', 'attachments', "#{file_id}#{File.extname(tempfile)}")
-              upload_dir = File.join('uploads', 'attachments')
-              thumbnail_dir = File.join('uploads', 'thumbnails')
-              FileUtils.mkdir_p(upload_dir) unless Dir.exist?(upload_dir)
-              FileUtils.mkdir_p(thumbnail_dir) unless Dir.exist?(thumbnail_dir)
-              FileUtils.cp(tempfile.path, upload_path)
-              thumbnail_path = Thumbnailer.create(upload_path)
-              FileUtils.mv(thumbnail_path, File.join('uploads', 'thumbnails', "#{file_id}.png"))
+              storage = Filesystem.new
+              storage.create(file_id, tempfile)
             ensure
               tempfile.close
               tempfile.unlink   # deletes the temp file
             end
           end
         end
+        true
+        #params.each do |file_id, file|
+          #if tempfile = file.tempfile
+           #begin
+             #upload_path = File.join('uploads', 'attachments', "#{file_id}#{File.extname(tempfile)}")
+             #upload_dir = File.join('uploads', 'attachments')
+             #thumbnail_dir = File.join('uploads', 'thumbnails')
+             #FileUtils.mkdir_p(upload_dir) unless Dir.exist?(upload_dir)
+             #FileUtils.mkdir_p(thumbnail_dir) unless Dir.exist?(thumbnail_dir)
+             #FileUtils.cp(tempfile.path, upload_path)
+             #thumbnail_path = Thumbnailer.create(upload_path)
+             #FileUtils.mv(thumbnail_path, File.join('uploads', 'thumbnails', "#{file_id}.png"))
+          #ensure
+          #   tempfile.close
+          #   tempfile.unlink   # deletes the temp file
+          # end
+        #end
+        #end
         true
       end
 
