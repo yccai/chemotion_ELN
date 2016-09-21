@@ -28,3 +28,4 @@ if (![].includes) {
 }
 var ES6Promise = require('es6-promise');
 ES6Promise.polyfill();
+var find = require('array.prototype.find');

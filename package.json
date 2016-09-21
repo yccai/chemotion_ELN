@@ -4,6 +4,7 @@
   "dependencies": {
     "alt": "0.18.6",
     "alt-utils": "1.0.0",
+    "array.prototype.find":"2.0.0",
     "aviator": "v0.6.1",
     "babel-eslint": "6.1.2",
     "babel-plugin-transform-object-rest-spread": "6.8.0",
@@ -42,7 +43,7 @@
     "react-ui-tree": "2.5.0",
     "sha256": "^0.2.0",
     "uuid": "^2.0.2",
-    "whatwg-fetch": "1.0.0"
+    "whatwg-fetch": "1.0.0",
   },
   "browserify": {
     "transform": [
