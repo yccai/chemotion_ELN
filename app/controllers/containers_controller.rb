@@ -1,17 +1,17 @@
 class ContainersController < ApplicationController
 
   def index
-    config.mailcollector = Rails.application.config_for(:mailcollector)
+    #config.mailcollector = Rails.application.config_for(:mailcollector)
 
 
-      mailcollector = Mailcollector.new(config.mailcollector["method"],
-      config.mailcollector["address"],
-      config.mailcollector["port"],
-      config.mailcollector["user"],
-      config.mailcollector["passwd"])
+    #  mailcollector = Mailcollector.new(config.mailcollector["method"],
+  #    config.mailcollector["address"],
+  #    config.mailcollector["port"],
+  #    config.mailcollector["user"],
+  #    config.mailcollector["passwd"])
 
 
-      mailcollector.execute
+  #    mailcollector.execute
 
 
 
