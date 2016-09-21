@@ -26,3 +26,5 @@ if (![].includes) {
     return false;
   };
 }
+var ES6Promise = require('es6-promise');
+ES6Promise.polyfill();

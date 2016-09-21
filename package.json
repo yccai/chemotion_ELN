@@ -16,6 +16,7 @@
     "clipboard": "^1.5.12",
     "debounce": "^1.0.0",
     "deep-equal": "1.0.1",
+    "es6-promise": "3.3.1",
     "es6-promise-debounce": "^1.0.1",
     "eslint": "2.10.2",
     "eslint-plugin-react": "5.1.1",
