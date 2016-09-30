@@ -132,14 +132,15 @@ module Chemotion
       #todo: move to AttachmentAPI
       desc "Upload attachments"
       post 'upload_dataset_attachments' do
+
         params.each do |file_id, file|
             if tempfile = file.tempfile
             begin
-              #Test
-              con = Container.find(11)
-              #End
+            #Test
+              db_attachment = Attachment.where(identifier: file_id)
+
               storage = Filesystem.new
-              storage.create(current_user, con, file_id, tempfile)
+              storage.create(current_user, db_attachment, tempfile)
             ensure
               tempfile.close
               tempfile.unlink   # deletes the temp file
@@ -170,6 +171,7 @@ module Chemotion
       module SampleUpdator
 
         def self.updated_embedded_analyses(analyses)
+
           Array(analyses).map do |ana|
             {
               id: ana.id,
@@ -181,6 +183,7 @@ module Chemotion
               description: ana.description,
               datasets: Array(ana.datasets).map do |dataset|
                 {
+
                   id: dataset.id,
                   type: dataset.type,
                   name: dataset.name,
@@ -205,6 +208,50 @@ module Chemotion
               end
             }
           end
+        end
+
+        def self.updated_analyses(sample, analyses)
+          root_container = sample.container
+
+          analyses.map do |ana|
+            puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Gibt es Container in DB: " + ana.id
+            if Container.exists?(:identifier => ana.id)
+              puts "Ja es gibt Container: " + ana.id
+              puts "Lese Container aus Datenbank"
+              ana_container = Container.find_by identifier: ana.id
+            else
+              puts "Nein noch kein Eintrag"
+              ana_container = Container.create! :name => ana.name, :parent => root_container
+              ana_container.identifier = ana.id
+            end
+            ana_container.save
+
+            #Datasets
+            ana.datasets.map do |dataset|
+              puts "Gibt es Datasets in DB: " + dataset.id
+              if Container.exists?(:identifier => dataset.id)
+                puts "Ja es gibt Dataset in DB"
+
+                data_container = Container.find_by identifier: dataset.id
+             else
+               puts "Nein noch kein Eintrag"
+               data_container = Container.create! :name => dataset.name, :parent => ana_container
+               data_container.identifier = dataset.id
+             end
+             data_container.save
+             dataset.attachments.each do |attachment|
+               attachment_link = Attachment.where(identifier: attachment.id).first_or_create
+               if(attachment.file)
+                   attachment_link.filename = attachment.file.id
+               else
+                  attachment_link.filename = attachment.filename
+              end
+               attachment_link.container = data_container
+              attachment_link.save
+              end
+            end
+          end
+          #End New
         end
       end
 
@@ -259,6 +306,7 @@ module Chemotion
 
           if sample = Sample.find(params[:id])
             sample.update(attributes)
+            SampleUpdator.updated_analyses(sample, params[:analyses])
           end
           {sample: ElementPermissionProxy.new(current_user, sample, user_ids).serialized}
         end
@@ -336,7 +384,15 @@ module Chemotion
         all_coll = Collection.get_all_collection_for_user(current_user.id)
         sample.collections << all_coll
 
+        root_container = Container.new
+        root_container.name = "root"
+        root_container.save!
+
+        sample.container = root_container
+
         sample.save!
+
+
 
         sample
       end

@@ -11,18 +11,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160825120422) do
+ActiveRecord::Schema.define(version: 20160930063705) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
-  enable_extension "hstore"
   enable_extension "pg_trgm"
+  enable_extension "hstore"
 
   create_table "attachments", force: :cascade do |t|
     t.string   "filename"
     t.integer  "container_id"
     t.datetime "created_at",   null: false
     t.datetime "updated_at",   null: false
+    t.string   "identifier"
   end
 
   add_index "attachments", ["container_id"], name: "index_attachments_on_container_id", using: :btree
@@ -99,7 +100,12 @@ ActiveRecord::Schema.define(version: 20160825120422) do
     t.string   "parentFolder"
     t.datetime "created_at",   null: false
     t.datetime "updated_at",   null: false
+    t.string   "identifier"
+    t.string   "ancestry"
+    t.integer  "sample_id"
   end
+
+  add_index "containers", ["sample_id"], name: "index_containers_on_sample_id", using: :btree
 
   create_table "delayed_jobs", force: :cascade do |t|
     t.integer  "priority",   default: 0, null: false
@@ -127,6 +133,29 @@ ActiveRecord::Schema.define(version: 20160825120422) do
   end
 
   add_index "elemental_compositions", ["sample_id"], name: "index_elemental_compositions_on_sample_id", using: :btree
+
+  create_table "fingerprints", force: :cascade do |t|
+    t.bit      "fp0",          limit: 64
+    t.bit      "fp1",          limit: 64
+    t.bit      "fp2",          limit: 64
+    t.bit      "fp3",          limit: 64
+    t.bit      "fp4",          limit: 64
+    t.bit      "fp5",          limit: 64
+    t.bit      "fp6",          limit: 64
+    t.bit      "fp7",          limit: 64
+    t.bit      "fp8",          limit: 64
+    t.bit      "fp9",          limit: 64
+    t.bit      "fp10",         limit: 64
+    t.bit      "fp11",         limit: 64
+    t.bit      "fp12",         limit: 64
+    t.bit      "fp13",         limit: 64
+    t.bit      "fp14",         limit: 64
+    t.bit      "fp15",         limit: 64
+    t.integer  "num_set_bits", limit: 2
+    t.datetime "created_at",              null: false
+    t.datetime "updated_at",              null: false
+    t.time     "deleted_at"
+  end
 
   create_table "ketcherails_common_templates", force: :cascade do |t|
     t.integer  "moderated_by"
@@ -196,32 +225,15 @@ ActiveRecord::Schema.define(version: 20160825120422) do
     t.float    "melting_point"
     t.float    "boiling_point"
     t.string   "sum_formular"
-    t.string   "names",                             default: [],                 array: true
+    t.string   "names",                  default: [],                 array: true
     t.string   "iupac_name"
     t.string   "molecule_svg_file"
-    t.datetime "created_at",                                        null: false
-    t.datetime "updated_at",                                        null: false
+    t.datetime "created_at",                             null: false
+    t.datetime "updated_at",                             null: false
     t.datetime "deleted_at"
-    t.boolean  "is_partial",                        default: false, null: false
+    t.boolean  "is_partial",             default: false, null: false
     t.float    "exact_molecular_weight"
-    t.bit      "fp0",                    limit: 64
-    t.bit      "fp1",                    limit: 64
-    t.bit      "fp2",                    limit: 64
-    t.bit      "fp3",                    limit: 64
-    t.bit      "fp4",                    limit: 64
-    t.bit      "fp5",                    limit: 64
-    t.bit      "fp6",                    limit: 64
-    t.bit      "fp7",                    limit: 64
-    t.bit      "fp8",                    limit: 64
-    t.bit      "fp9",                    limit: 64
-    t.bit      "fp10",                   limit: 64
-    t.bit      "fp11",                   limit: 64
-    t.bit      "fp12",                   limit: 64
-    t.bit      "fp13",                   limit: 64
-    t.bit      "fp14",                   limit: 64
-    t.bit      "fp15",                   limit: 64
     t.string   "cano_smiles"
-    t.integer  "num_set_bits",           limit: 2
   end
 
   add_index "molecules", ["deleted_at"], name: "index_molecules_on_deleted_at", using: :btree
@@ -357,34 +369,15 @@ ActiveRecord::Schema.define(version: 20160825120422) do
     t.float    "density",             default: 1.0,   null: false
     t.float    "melting_point"
     t.float    "boiling_point"
+    t.integer  "fingerprint_id"
+    t.integer  "container_id"
   end
 
+  add_index "samples", ["container_id"], name: "index_samples_on_container_id", using: :btree
   add_index "samples", ["deleted_at"], name: "index_samples_on_deleted_at", using: :btree
   add_index "samples", ["identifier"], name: "index_samples_on_identifier", using: :btree
   add_index "samples", ["molecule_id"], name: "index_samples_on_sample_id", using: :btree
   add_index "samples", ["user_id"], name: "index_samples_on_user_id", using: :btree
-
-  create_table "scifinding_credentials", force: :cascade do |t|
-    t.string   "username"
-    t.string   "encrypted_password"
-    t.string   "encrypted_current_token"
-    t.string   "encrypted_refreshed_token"
-    t.datetime "token_expires_at"
-    t.datetime "token_requested_at"
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
-    t.integer  "user_id"
-    t.string   "encrypted_password_iv"
-    t.string   "encrypted_current_token_iv"
-    t.string   "encrypted_refreshed_token_iv"
-  end
-
-  create_table "scifinding_tags", force: :cascade do |t|
-    t.integer  "molecule_id"
-    t.integer  "count"
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
-  end
 
   create_table "screens", force: :cascade do |t|
     t.string   "description"
@@ -445,8 +438,8 @@ ActiveRecord::Schema.define(version: 20160825120422) do
     t.datetime "deleted_at"
     t.hstore   "counters",                         default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"}, null: false
     t.string   "name_abbreviation",      limit: 5
-    t.boolean  "is_templates_moderator",           default: false,                                                 null: false
     t.string   "type",                             default: "Person"
+    t.boolean  "is_templates_moderator",           default: false,                                                 null: false
   end
 
   add_index "users", ["deleted_at"], name: "index_users_on_deleted_at", using: :btree
@@ -497,4 +490,6 @@ ActiveRecord::Schema.define(version: 20160825120422) do
   add_index "wells", ["wellplate_id"], name: "index_wells_on_wellplate_id", using: :btree
 
   add_foreign_key "attachments", "containers"
+  add_foreign_key "containers", "samples"
+  add_foreign_key "samples", "containers"
 end

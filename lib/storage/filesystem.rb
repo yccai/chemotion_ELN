@@ -2,38 +2,34 @@
 class Filesystem
 
   def initialize
-    @upload_root_folder = "uploadNew8"
+    @upload_root_folder = "uploadNew4711"
     @attachment_folder = "attachments"
     @thumbnail_folder = "thumbnails"
   end
 
-  def create(user, container, file_id, file)
-
-
-
-    #upload_file_path = File.join(@upload_root_folder, @attachment_folder, "#{file_id}#{File.extname(file)}")
-    #upload_attachment_dir = File.join(@upload_root_folder, @attachment_folder)
-    #upload_thumbnail_dir = File.join(@upload_root_folder, @thumbnail_folder)
-
-    upload_dir = getPath(user, container)
-
+  def create(user, db_attachment, file)
 
     begin
+      container = Container.where(id: db_attachment.container_id)
+      upload_dir = getPath(user, container)
       FileUtils.mkdir_p(upload_dir) unless Dir.exist?(upload_dir)
      rescue
         #Couldn't create folders
+        puts "DO SOMTHING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        db_attachment.delete
       else
         begin
           upload_file_path = File.join(upload_dir, "#{file_id}#{File.extname(file)}")
           IO.binwrite(upload_file_path, file)
         rescue
           #Couldn't write files
+          db_attachment.delete
         else
           #Everything is fine
-          newAttachment = Attachment.new
-          newAttachment.filename = file_id
-          newAttachment.container_id = container.id
-          newAttachment.save
+          #newAttachment = Attachment.new
+          #newAttachment.filename = file_id
+          #newAttachment.container_id = container.id
+          #newAttachment.save
 
 
           #create thumbnail
