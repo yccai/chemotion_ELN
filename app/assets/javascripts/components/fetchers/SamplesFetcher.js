@@ -94,13 +94,14 @@ export default class SamplesFetcher {
     let files = _.compact(_.flatten(attachments.filter(a=>a.is_new).map(a=>fileFromAttachment(a))));
 
     if(files.length > 0) {
-      SamplesFetcher.uploadFiles(files);
+      SamplesFetcher.uploadFiles(files)
     }
   }
 
   static update(sample) {
     SamplesFetcher.uploadDatasetAttachmentsForSample(sample.serialize());
-    let promise = fetch('/api/v1/samples/' + sample.id, {
+
+    promise = fetch('/api/v1/samples/' + sample.id, {
       credentials: 'same-origin',
       method: 'put',
       headers: {
@@ -121,6 +122,7 @@ export default class SamplesFetcher {
 
   static create(sample) {
     SamplesFetcher.uploadDatasetAttachmentsForSample(sample.serialize());
+    
     let promise = fetch('/api/v1/samples', {
       credentials: 'same-origin',
       method: 'post',
@@ -133,9 +135,7 @@ export default class SamplesFetcher {
       return response.json()
     }).then((json) => {
       return new Sample(json.sample);
-    }).catch((errorMessage) => {
-      console.log(errorMessage);
-    });
+    }).catch((errorMessage) => { console.log(errorMessage); });
 
     return promise;
   }

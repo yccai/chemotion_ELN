@@ -1,3 +1,5 @@
+require 'open-uri'
+
 module Chemotion
   class SampleAPI < Grape::API
     include Grape::Kaminari
@@ -132,15 +134,11 @@ module Chemotion
       #todo: move to AttachmentAPI
       desc "Upload attachments"
       post 'upload_dataset_attachments' do
-
         params.each do |file_id, file|
             if tempfile = file.tempfile
             begin
-            #Test
-              db_attachment = Attachment.where(identifier: file_id)
-
               storage = Filesystem.new
-              storage.create(current_user, db_attachment, tempfile)
+              storage.temp(file_id, IO.binread(tempfile))
             ensure
               tempfile.close
               tempfile.unlink   # deletes the temp file
@@ -161,11 +159,11 @@ module Chemotion
         content_type "application/octet-stream"
         header['Content-Disposition'] = "attachment; filename=#{filename}"
         env['api.format'] = :binary
-        File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
+        #File.open(File.join('uploads', 'attachments', "#{file_id}#{File.extname(filename)}")).read
 
-        #attachment = Attachment.find(params[:attachment_id])
-        #storage = Filesystem.new
-        #storage.read(current_user, attachment)
+        attachment = Attachment.find_by identifier: file_id
+        storage = Filesystem.new
+        storage.read(current_user, attachment)
       end
 
       module SampleUpdator
@@ -210,15 +208,13 @@ module Chemotion
           end
         end
 
-        def self.updated_analyses(sample, analyses)
+        def self.updated_analyses(user, sample, analyses)
           root_container = sample.container
 
           analyses.map do |ana|
-            puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Gibt es Container in DB: " + ana.id
             if Container.exists?(:identifier => ana.id)
-              puts "Ja es gibt Container: " + ana.id
-              puts "Lese Container aus Datenbank"
               ana_container = Container.find_by identifier: ana.id
+              ana_container.name = ana.name
             else
               puts "Nein noch kein Eintrag"
               ana_container = Container.create! :name => ana.name, :parent => root_container
@@ -228,30 +224,31 @@ module Chemotion
 
             #Datasets
             ana.datasets.map do |dataset|
-              puts "Gibt es Datasets in DB: " + dataset.id
-              if Container.exists?(:identifier => dataset.id)
-                puts "Ja es gibt Dataset in DB"
 
+              if Container.exists?(:identifier => dataset.id)
                 data_container = Container.find_by identifier: dataset.id
+                data_container.name = dataset.name
              else
-               puts "Nein noch kein Eintrag"
                data_container = Container.create! :name => dataset.name, :parent => ana_container
                data_container.identifier = dataset.id
              end
              data_container.save
+
              dataset.attachments.each do |attachment|
                attachment_link = Attachment.where(identifier: attachment.id).first_or_create
-               if(attachment.file)
-                   attachment_link.filename = attachment.file.id
-               else
-                  attachment_link.filename = attachment.filename
-              end
-               attachment_link.container = data_container
-              attachment_link.save
+               attachment_link.filename = attachment.name
+               if(attachment.is_new)
+                 storage = Filesystem.new
+                 storage.move_from_temp_to_storage(user, attachment.id)
+                 #Speichern wo es liegt
+               end
+
+              attachment_link.container = data_container
+              attachment_link.save!
+
               end
             end
           end
-          #End New
         end
       end
 
@@ -306,7 +303,7 @@ module Chemotion
 
           if sample = Sample.find(params[:id])
             sample.update(attributes)
-            SampleUpdator.updated_analyses(sample, params[:analyses])
+            SampleUpdator.updated_analyses(current_user, sample, params[:analyses])
           end
           {sample: ElementPermissionProxy.new(current_user, sample, user_ids).serialized}
         end

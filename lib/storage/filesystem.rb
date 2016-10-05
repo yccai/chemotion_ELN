@@ -3,65 +3,56 @@ class Filesystem
 
   def initialize
     @upload_root_folder = "uploadNew4711"
-    @attachment_folder = "attachments"
     @thumbnail_folder = "thumbnails"
+
+    @temp_folder = "temp"
   end
 
-  def create(user, db_attachment, file)
-
+  def temp(file_id, file)
     begin
-      container = Container.where(id: db_attachment.container_id)
-      upload_dir = getPath(user, container)
-      FileUtils.mkdir_p(upload_dir) unless Dir.exist?(upload_dir)
-     rescue
-        #Couldn't create folders
-        puts "DO SOMTHING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        db_attachment.delete
-      else
-        begin
-          upload_file_path = File.join(upload_dir, "#{file_id}#{File.extname(file)}")
-          IO.binwrite(upload_file_path, file)
-        rescue
-          #Couldn't write files
-          db_attachment.delete
-        else
-          #Everything is fine
-          #newAttachment = Attachment.new
-          #newAttachment.filename = file_id
-          #newAttachment.container_id = container.id
-          #newAttachment.save
-
-
-          #create thumbnail
-          #
-        end
-    ensure
-    file.close
+      FileUtils.mkdir_p(@temp_folder) unless Dir.exist?(@temp_folder)
+      path = File.join(@temp_folder, file_id)
+      IO.binwrite(path, file)
+    rescue
+      #TODO
     end
-    #return newAttachment
   end
 
-  #def read(user, attachment)
-  #  dir = getPath(user)
-  #  file_path = File.join(dir, attachment.filename)
+  def move_from_temp_to_storage(user, file_id)
+      begin
+        folder = File.join(@upload_root_folder, user.id.to_s)
+        FileUtils.mkdir_p(folder) unless Dir.exist?(folder)
+        path = File.join(folder, file_id)
+        tpath = File.join(@temp_folder, file_id)
+        FileUtils.mv(tpath, path)
+      rescue
+        #TODO
+      end
+  end
 
-  #  begin
-  #    return IO.binread(file_path)
-  #  end
-  #end
+  def read(user, attachment)
+    begin
+      folder = File.join(@upload_root_folder, user.id.to_s)
+      path = File.join(folder, attachment.identifier)
+
+      return IO.binread(path)
+    rescue
+      #TODO
+    end
+  end
 
 
   private
-  def getPath(user, container)
-    container_path = container.id.to_s
-    while container.parentFolder.to_i > 0 do
-      container = Container.find(container.parentFolder)
-      container_path = File.join(container.id.to_s, container_path)
-    end
-    tmpPath = File.join(@upload_root_folder, user.id.to_s, container_path)
+  #def getPath(user, container)
+  #  container_path = container.id.to_s
+  #  while container.parentFolder.to_i > 0 do
+  #    container = Container.find(container.parentFolder)
+  #    container_path = File.join(container.id.to_s, container_path)
+  #  end
+  #  tmpPath = File.join(@upload_root_folder, user.id.to_s, container_path)
 
-    return tmpPath
-  end
+  #  return tmpPath
+  #end
 
   def create_thumbnail(file_id, file_path)
     begin
