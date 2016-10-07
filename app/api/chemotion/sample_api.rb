@@ -211,46 +211,74 @@ module Chemotion
         def self.updated_analyses(user, sample, analyses)
           root_container = sample.container
 
-          analyses.map do |ana|
-            if Container.exists?(:identifier => ana.id)
-              ana_container = Container.find_by identifier: ana.id
+          Array(analyses).map do |ana|
+            if Container.exists?(:id => ana.id)
+              ana_container = Container.find_by id: ana.id
               ana_container.name = ana.name
             else
-              puts "Nein noch kein Eintrag"
+              #New entrie
               ana_container = Container.create! :name => ana.name, :parent => root_container
-              ana_container.identifier = ana.id
+              ana_container.container_type = ana.type
             end
-            ana_container.save
-
-            #Datasets
-            ana.datasets.map do |dataset|
-
-              if Container.exists?(:identifier => dataset.id)
-                data_container = Container.find_by identifier: dataset.id
-                data_container.name = dataset.name
-             else
-               data_container = Container.create! :name => dataset.name, :parent => ana_container
-               data_container.identifier = dataset.id
-             end
-             data_container.save
-
-             dataset.attachments.each do |attachment|
-               attachment_link = Attachment.where(identifier: attachment.id).first_or_create
-               attachment_link.filename = attachment.name
-               if(attachment.is_new)
-                 storage = Filesystem.new
-                 storage.move_from_temp_to_storage(user, attachment.id)
-                 #Speichern wo es liegt
-               end
-
-              attachment_link.container = data_container
-              attachment_link.save!
-
+            ana_container.save!
+            {
+              id: ana_container.id,
+              type: ana_container.container_type,
+              name: ana.name,
+              kind: ana.kind,
+              status: ana.status,
+              content: ana.content,
+              description: ana.description,
+              #Datasets
+              dataset: Array(ana.datasets).map do |dataset|
+                if Container.exists?(:id => dataset.id)
+                  data_container = Container.find_by id: dataset.id
+                  data_container.name = dataset.name
+                else
+                 #New entrie
+                 data_container = Container.create! :name => dataset.name, :parent => ana_container
+                 data_container.container_type = dataset.type
+                end
+                data_container.save!
+                {
+                    id: data_container.id,
+                    type: data_container.container_type,
+                    name: dataset.name,
+                    instrument: dataset.instrument,
+                    description: dataset.description,
+                    #Attachments
+                    attachments: Array(dataset.attachments).map do |attachment|
+                      attachment_link = Attachment.where(id: attachment.id).first_or_create
+                      attachment_link.filename = attachment.name
+                      if(attachment.is_new)
+                        storage = Filesystem.new
+                        storage.move_from_temp_to_storage(user, attachment.file.id)
+                        #Speichern wo es liegt
+                      end
+                      attachment_link.container = data_container
+                      attachment_link.save!
+                      if(attachment.file)
+                        {
+                          id: attachment_link.id,
+                          name: attachment.name,
+                          filename: attachment.file.id
+                        }
+                      else
+                        {
+                          id: attachment_link.id,
+                          name: attachment.name,
+                          filename: attachment.filename
+                        }
+                      end
+                    end
+                }
               end
-            end
+            }
           end
         end
-      end
+
+      end #module
+
 
       desc "Update sample by id"
       params do
@@ -285,8 +313,12 @@ module Chemotion
 
         put do
           attributes = declared(params, include_missing: false)
-          embedded_analyses = SampleUpdator.updated_embedded_analyses(params[:analyses])
-          attributes.merge!(analyses: embedded_analyses)
+          #embedded_analyses = SampleUpdator.updated_embedded_analyses(params[:analyses])
+          #attributes.merge!(analyses: embedded_analyses)
+          if sample = Sample.find(params[:id])
+            embedded_analyses = SampleUpdator.updated_analyses(current_user, sample, params[:analyses])
+            attributes.merge!(analyses: embedded_analyses)
+          end
 
           # otherwise ActiveRecord::UnknownAttributeError appears
           attributes[:elemental_compositions].each do |i|
@@ -301,10 +333,9 @@ module Chemotion
             ) unless prop_value.blank?
           end
 
-          if sample = Sample.find(params[:id])
+
             sample.update(attributes)
-            SampleUpdator.updated_analyses(current_user, sample, params[:analyses])
-          end
+          
           {sample: ElementPermissionProxy.new(current_user, sample, user_ids).serialized}
         end
       end

@@ -38,6 +38,7 @@ export default class SamplesFetcher {
         return response.json()
       }).then((json) => {
         return new Sample(json.sample);
+
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
@@ -122,7 +123,7 @@ export default class SamplesFetcher {
 
   static create(sample) {
     SamplesFetcher.uploadDatasetAttachmentsForSample(sample.serialize());
-    
+
     let promise = fetch('/api/v1/samples', {
       credentials: 'same-origin',
       method: 'post',

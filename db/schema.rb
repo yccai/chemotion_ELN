@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160930063705) do
+ActiveRecord::Schema.define(version: 20161006102746) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -97,12 +97,12 @@ ActiveRecord::Schema.define(version: 20160930063705) do
 
   create_table "containers", force: :cascade do |t|
     t.string   "name"
-    t.string   "parentFolder"
-    t.datetime "created_at",   null: false
-    t.datetime "updated_at",   null: false
+    t.datetime "created_at",     null: false
+    t.datetime "updated_at",     null: false
     t.string   "identifier"
     t.string   "ancestry"
     t.integer  "sample_id"
+    t.string   "container_type"
   end
 
   add_index "containers", ["sample_id"], name: "index_containers_on_sample_id", using: :btree
