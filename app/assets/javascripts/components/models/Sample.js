@@ -61,48 +61,71 @@ export default class Sample extends Element {
     ];
   }
 
+  static buildEmpty(collection_id) {
+    let sample = new Sample({
+      collection_id: collection_id,
+      type: 'sample',
+      external_label: '',
+      target_amount_value: 0,
+      target_amount_unit: 'g',
+      description: '',
+      purity: 1,
+      density: 1,
+      solvent: '',
+      impurities: '',
+      location: '',
+      molfile: '',
+      molecule: { id: '_none_' },
+      analyses: [],
+      residues: [],
+      elemental_compositions: [{
+        composition_type: 'found',
+        data: {}
+      }],
+      imported_readout: '',
+      attached_amount_mg: '' // field for polymers calculations
+    });
+
+    sample.short_label = Sample.buildNewSampleShortLabelForCurrentUser();
+    return sample;
+  }
+
   buildCopy() {
     let sample = super.buildCopy()
     sample.short_label = sample.short_label + " Copy"
     return sample;
   }
 
+  buildNew() {
+    let newSample = Sample.buildEmpty(this.collection_id)
+
+    newSample.molfile = this.molfile || ''
+    newSample.sample_svg_file = this.sample_svg_file
+
+    return newSample;
+  }
+
   buildChild() {
+    let splitSample = this.buildChildWithoutCounter();
+
     Sample.counter += 1;
 
     //increase subsample count per sample on client side, as we have no persisted data at this moment
     let children_count = parseInt(Sample.children_count[this.id] || this.children_count);
     children_count += 1;
+    splitSample.short_label += "-" + children_count;
     Sample.children_count[this.id] = children_count;
 
-    let splitSample = this.clone();
-    splitSample.parent_id = this.id;
-    splitSample.id = Element.buildID();
-
-    if (this.name) splitSample.name = this.name
-    if (this.external_label)
-      splitSample.external_label = this.external_label
-    if (this.elemental_compositions)
-      splitSample.elemental_compositions = this.elemental_compositions
-
-    splitSample.short_label += "-" + children_count;
-    splitSample.created_at = null;
-    splitSample.updated_at = null;
-    splitSample.target_amount_value = 0;
-    splitSample.real_amount_value = null;
-    splitSample.is_split = true;
-    splitSample.is_new = true;
     return splitSample;
   }
 
   buildChildWithoutCounter() {
-    let splitSample = this.clone();
+    let splitSample = this;
     splitSample.parent_id = this.id;
     splitSample.id = Element.buildID();
 
     if (this.name) splitSample.name = this.name
-    if (this.external_label)
-      splitSample.external_label = this.external_label
+    if (this.external_label) splitSample.external_label = this.external_label
     if (this.elemental_compositions)
       splitSample.elemental_compositions = this.elemental_compositions
 
@@ -150,81 +173,6 @@ export default class Sample extends Element {
     });
 
     return serialized;
-  }
-
-  static buildEmpty(collection_id) {
-    let sample = new Sample({
-      collection_id: collection_id,
-      type: 'sample',
-      external_label: '',
-      target_amount_value: 0,
-      target_amount_unit: 'g',
-      description: '',
-      purity: 1,
-      density: 1,
-      solvent: '',
-      impurities: '',
-      location: '',
-      molfile: '',
-      molecule: { id: '_none_' },
-      analyses: [],
-      residues: [],
-      elemental_compositions: [{
-        composition_type: 'found',
-        data: {}
-      }],
-      imported_readout: '',
-      attached_amount_mg: '' // field for polymers calculations
-    });
-
-    sample.short_label = Sample.buildNewSampleShortLabelForCurrentUser();
-    return sample;
-  }
-
-  static buildReactionSample(collection_id, delta, materialGroup = null, molecule = { id: '_none_'}) {
-    let target_molecule = molecule.molecule == undefined ? molecule : molecule.molecule
-    let sample = new Sample({
-      collection_id: collection_id,
-      type: 'sample',
-      external_label: '',
-      target_amount_value: 0,
-      target_amount_unit: 'g',
-      description: '',
-      purity: 1,
-      density: 1,
-      solvent: '',
-      impurities: '',
-      location: '',
-      molfile: molecule.molfile || '',
-      molecule:  target_molecule,
-      analyses: [],
-      elemental_compositions: [{
-        composition_type: 'found',
-        data: {}
-      }],
-      residues: [],
-      imported_readout: ''
-    });
-    sample.sample_svg_file = molecule.sample_svg_file;
-
-    if(molecule.residues && molecule.residues.length > 0) {
-      sample.residues = molecule.residues;
-      sample.contains_residues = true;
-
-      if(materialGroup == 'products')
-        sample.loading = 0;
-    }
-
-    // allow zero loading for reaction product
-    sample.reaction_product = (materialGroup == 'products');
-
-    // Skip short_label for reactants and solvents
-    if (materialGroup != "reactants" && materialGroup != "solvents")
-      sample.short_label = Sample.buildNewSampleShortLabelForCurrentUser(delta)
-    else
-      sample.short_label = materialGroup
-
-    return sample;
   }
 
   static buildNewSampleShortLabelWithCounter(counter) {
@@ -341,10 +289,9 @@ export default class Sample extends Element {
 
   iupac_name_tag(length) {
     let iupac_name = this.molecule.iupac_name || "";
-    return iupac_name.length > length ?
-      iupac_name.slice(0, length) + "..."
-      :
-      iupac_name
+    return iupac_name.length > length
+           ? iupac_name.slice(0, length) + "..."
+           : iupac_name
   }
 
   get location() {

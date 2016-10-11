@@ -160,6 +160,26 @@ export default class Reaction extends Element {
 
   addMaterial(material, materialGroup) {
     const materials = this[materialGroup];
+
+    material = this.materialPolicy(material, materialGroup);
+    materials.push(material);
+  }
+
+  deleteMaterial(material, materialGroup) {
+    const materials = this[materialGroup];
+    const materialIndex = materials.indexOf(material);
+    materials.splice(materialIndex, 1);
+  }
+
+  moveMaterial(material, previousMaterialGroup, materialGroup) {
+    const materials = this[materialGroup];
+    this.deleteMaterial(material, previousMaterialGroup);
+    material = this.materialPolicy(material, materialGroup);
+    materials.push(material);
+  }
+
+  // We will process all reaction policy here
+  materialPolicy(material, materialGroup) {
     // do not set it as reference material if this is reaction product
     if(!this.referenceMaterial && materialGroup == 'starting_materials') {
       this._setAsReferenceMaterial(material);
@@ -174,24 +194,26 @@ export default class Reaction extends Element {
       if(material.contains_residues) {
         material.loading = 0.0;
       }
+
+      material.name = this.short_label + "-" +
+                    String.fromCharCode('A'.charCodeAt(0) + this.products.length);
+
+      material.short_label =
+        Sample.buildNewSampleShortLabelForCurrentUser(this.temporary_sample_counter);
+      material.reaction_product = true;
+      this.temporary_sample_counter += 1;
+    } else if (materialGroup == "reactants" || materialGroup == "solvents") {
+      // "reactant" or "solvent"
+      material.short_label = materialGroup.slice(0, -1)
+      material.reaction_product = false;
+    } else if (materialGroup == "starting_materials") {
+      material.short_label =
+        Sample.buildNewSampleShortLabelForCurrentUser(this.temporary_sample_counter);
+      material.reaction_product = false;
+      this.temporary_sample_counter += 1;
     }
 
-    materials.push(material);
-    // Skip short_label for reactants and solvents
-    if (materialGroup != "reactants" && materialGroup != "solvents")
-      this.temporary_sample_counter += 1;
-  }
-
-  deleteMaterial(material, materialGroup) {
-    const materials = this[materialGroup];
-    const materialIndex = materials.indexOf(material);
-    materials.splice(materialIndex, 1);
-  }
-
-  moveMaterial(material, previousMaterialGroup, materialGroup) {
-    const materials = this[materialGroup];
-    this.deleteMaterial(material, previousMaterialGroup);
-    materials.push(material);
+    return material;
   }
 
   _coerceToSamples(samples) {
