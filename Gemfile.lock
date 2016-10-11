@@ -30,9 +30,9 @@ GIT
 
 GIT
   remote: git://github.com/ComPlat/scifinding.git
-  revision: 42dc77a269910ce093a16e8445e25d501789421f
+  revision: 5cdda928ee246dea352b1d1f84d80878fc4df0f0
   specs:
-    scifinding (0.1.1)
+    scifinding (0.1.2)
       attr_encrypted (= 3.0.1)
       oauth2
       rails (>= 4.2.0)
@@ -290,7 +290,7 @@ GEM
     jquery-ui-rails (5.0.5)
       railties (>= 3.2.16)
     json (1.8.3)
-    jwt (1.5.4)
+    jwt (1.5.6)
     kaminari (0.16.3)
       actionpack (>= 3.0.0)
       activesupport (>= 3.0.0)
@@ -559,7 +559,7 @@ DEPENDENCIES
   rtf
   sablon!
   sass-rails (~> 5.0)
-  scifinding (= 0.1.1)!
+  scifinding (= 0.1.2)!
   sdoc (~> 0.4.0)
   selenium-webdriver (~> 2.53.4)
   spring
