@@ -103,7 +103,7 @@ export default class SamplesFetcher {
   static update(sample) {
     SamplesFetcher.uploadDatasetAttachmentsForSample(sample.serialize());
 
-    promise = fetch('/api/v1/samples/' + sample.id, {
+    let promise = fetch('/api/v1/samples/' + sample.id, {
       credentials: 'same-origin',
       method: 'put',
       headers: {
