@@ -3,12 +3,17 @@
 
 
 ## [v0.2.1]
-> 2016-10-25
+> 2016-11-02
 * Features
-  * Temperature Chart with unit converter for reaction
-
+  * Temperature Chart with unit converter (°C, °F , K) for reaction
+  * Import molecules and create samples from a sd file
+    (R group and polymer support are not supported)
+  * Images in report doc are from eps files
+  * rearrange the reaction list for a report by Drag-and-drop -ing
+  * Text editing and formating tool bar for the reaction description
 * Fixes
-  * Analayses file upload: does not fail if thumbnail creation fails 
+  * upgrade to Ruby 2.3.1
+  * The Upload of analyses files does not fail if the thumbnail creation does
 
 ## [v0.2.0]
 
