@@ -1,6 +1,15 @@
 
 # Chemotion_ELN Changelog
 
+
+## [v0.2.1]
+> 2016-10-25
+* Features
+  * Temperature Chart with unit converter for reaction
+
+* Fixes
+  * Analayses file upload: does not fail if thumbnail creation fails 
+
 ## [v0.2.0]
 
 > 2016-10-17
