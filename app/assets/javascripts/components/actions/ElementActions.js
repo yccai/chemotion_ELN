@@ -91,22 +91,6 @@ class ElementActions {
       });};
   }
 
-  createSample(params) {
-    SamplesFetcher.uploadDatasetAttachmentsForSample(params.serialize())
-    return (dispatch) => { SamplesFetcher.create(params)
-      .then((result) => {
-        dispatch(result)
-      });};
-  }
-
-  createSampleForReaction(params) {
-    SamplesFetcher.uploadDatasetAttachmentsForSample(params.serialize())
-    return (dispatch) => { SamplesFetcher.create(params)
-      .then((result) => {
-        dispatch(result)
-      });};
-  }
-
   editReactionSample(reactionID, sampleID) {
     return (dispatch) => { SamplesFetcher.fetchById(sampleID)
       .then((result) => {
@@ -116,21 +100,22 @@ class ElementActions {
       });};
   }
 
-  updateSampleForReaction(params) {
-    SamplesFetcher.uploadDatasetAttachmentsForSample(params.serialize())
-    return (dispatch) => { SamplesFetcher.update(params)
-      .then((result) => {
-        dispatch(result)
-      }).catch((errorMessage) => {
-        console.log(errorMessage);
-      });};
+  uploadSampleAttachments(sample){
+    SamplesFetcher.uploadDatasetAttachmentsForSample(sample);
   }
 
-  updateSample(params) {
-    SamplesFetcher.uploadDatasetAttachmentsForSample(params.serialize())
-    return (dispatch) => { SamplesFetcher.update(params)
+  saveSample(sample, closeView) {
+    let action = sample.is_new ?
+      SamplesFetcher.create(sample)
+      :
+      SamplesFetcher.update(sample)
+
+    return (dispatch) => { action
       .then((result) => {
-        dispatch(result)
+        dispatch({
+          sample: result,
+          closeView: closeView,
+        })
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};

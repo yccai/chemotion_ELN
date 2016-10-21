@@ -143,27 +143,8 @@ export default class SampleDetails extends React.Component {
 
   submitFunction(closeView = false) {
     let {sample} = this.state
-    let { currentReaction, currentWellplate } = ElementStore.getState()
-
-    if(currentReaction) {
-      if(sample.isNew) {
-        ElementActions.createSampleForReaction(sample)
-      } else {
-        if(closeView) {
-          ElementActions.updateSampleForReaction(sample)
-        } else {
-          ElementActions.updateSample(new Sample(sample));
-        }
-      }
-    } else if(currentWellplate) {
-      ElementActions.updateSampleForWellplate(sample)
-    } else {
-      if(sample.isNew) {
-        ElementActions.createSample(sample)
-      } else {
-        ElementActions.updateSample(new Sample(sample))
-      }
-    }
+    ElementActions.uploadSampleAttachments(sample);
+    ElementActions.saveSample(sample, closeView);
   }
 
   closeDetails() {

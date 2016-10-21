@@ -72,13 +72,9 @@ class ElementStore {
       handleFetchSampleById: ElementActions.fetchSampleById,
       handleFetchSamplesByCollectionId:
         ElementActions.fetchSamplesByCollectionId,
-      handleUpdateSample: ElementActions.updateSample,
-      handleCreateSample: ElementActions.createSample,
-      handleCreateSampleForReaction: ElementActions.createSampleForReaction,
+      handleSaveSample: ElementActions.saveSample,
       handleEditReactionSample: ElementActions.editReactionSample,
       handleEditWellplateSample: ElementActions.editWellplateSample,
-      handleUpdateSampleForReaction: ElementActions.updateSampleForReaction,
-      handleUpdateSampleForWellplate: ElementActions.updateSampleForWellplate,
       handleCopySampleFromClipboard: ElementActions.copySampleFromClipboard,
       handleAddSampleToMaterialGroup: ElementActions.addSampleToMaterialGroup,
       handleImportSamplesFromFile: ElementActions.importSamplesFromFile,
@@ -257,7 +253,38 @@ class ElementStore {
     this.state.currentReaction = null;
   }
 
-  handleUpdateSampleForReaction() {
+  handleSaveSample(result) {
+    console.log(result);
+
+    UserActions.fetchCurrentUser();
+    this.handleRefreshElements('sample');
+    let sample = result.sample;
+
+    let { currentReaction, currentWellplate } = this.state;
+
+    if(sample.is_new) {
+      this.navigateToNewElement(sample);
+    } else {
+      this.state.currentElement = sample;
+    }
+
+    if(result.closeView) {
+      this.state.currentElement = null;
+      this.state.currentReaction = null;
+      if (currentReaction) {
+        if(sample.is_new) {
+          let materialGroup = this.state.currentMaterialGroup;
+          currentReaction.addMaterial(sample, materialGroup);
+          currentReaction.temporary_sample_counter += 1;
+        }
+        ElementActions.fetchReactionById(currentReaction)
+      } else if (currentWellplate) {
+        ElementActions.fetchWellplateById(currentWellplate)
+      }
+    }
+  }
+
+/*  handleUpdateSampleForReaction() {
     UserActions.fetchCurrentUser();
     let reactionID = this.state.currentReaction;
     this.state.currentElement = null;
@@ -278,7 +305,7 @@ class ElementStore {
 
     ElementActions.fetchWellplateById(wellplateID)
   }
-
+*/
   handleSplitAsSubsamples(ui_state) {
     ElementActions.fetchSamplesByCollectionId(ui_state.currentCollection.id);
   }
