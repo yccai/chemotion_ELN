@@ -30,7 +30,7 @@ gem 'browserify-rails' , '~> 3.0.1'
 gem 'ancestry'
 
 # svg composer
-gem 'nokogiri'
+gem 'nokogiri', '1.6.8.1'
 gem 'svg2pdf', github: 'ComPlat/svg2pdf'
 
 # API
@@ -55,7 +55,7 @@ gem 'roo', ">2.5.0"
 gem 'httparty'
 gem 'faraday'
 # Ketcher editor
-gem 'ketcherails', github: 'ComPlat/ketcher-rails'
+gem 'ketcherails', path: '~/web/ketcher-rails'
 
 # Free font icons
 gem "font-awesome-rails"
