@@ -5,7 +5,7 @@ cache:
     - node_modules
     - tmp/cache/assets/test/sprockets
 rvm:
-  - 2.2.1
+  - 2.3.1
 before_install:
   - npm install npm -g
   - nvm install 5.12.0
