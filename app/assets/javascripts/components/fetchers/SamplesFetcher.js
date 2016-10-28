@@ -112,14 +112,13 @@ export default class SamplesFetcher {
   }
 
 
-  static uploadDatasetAttachmentsForSample2(sample){
+  static getFileListfrom2(sample){
 
     var allFiles = new Array();
     this.filterAllAttachments(allFiles, sample.container.children);
 
-    if(allFiles.length > 0){
-        SamplesFetcher.uploadFiles(allFiles);
-    }
+    return allFiles
+
   }
 
   static filterAllAttachments(files, containers){
@@ -142,7 +141,8 @@ export default class SamplesFetcher {
 
 
   static update(sample) {
-    let files = SamplesFetcher.getFileListfrom(sample.serialize())
+    //let files = SamplesFetcher.getFileListfrom(sample.serialize())
+    let files = SamplesFetcher.getFileListfrom2(sample)
     let promise = ()=> fetch('/api/v1/samples/' + sample.id, {
       credentials: 'same-origin',
       method: 'put',
