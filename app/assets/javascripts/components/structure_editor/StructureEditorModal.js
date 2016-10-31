@@ -131,6 +131,7 @@ const StructureEditor =
     let minHeight = 590;//min table height is 590px, each <tr> is 36px
     let add_tr_count = ((height*0.75 - minHeight)/36).toFixed();// 75% screen
     add_tr_count = add_tr_count < 0 ? 0 : add_tr_count
+    if(add_tr_count > 2) add_tr_count -= 2;
     let adjustedHeight = add_tr_count*36 + minHeight;
     return (
       <div>
