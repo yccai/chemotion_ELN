@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-
+git_source(:github){ |repo_name| "https://github.com/#{repo_name}.git" }
 ruby '2.3.1'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
@@ -146,5 +146,11 @@ end
 #gem 'scifinding', '0.1.2', git: 'https://github.com/ComPlat/scifinding', :group => [:plugins,:development,:production]
 
 # nmr simulation
+
 gem "nmr_sim", git: 'https://github.com/ComPlat/nmr_sim', :group => [:plugins,:development,:production]
+
+# literature managment plugin
+git_source(:eln){ |repo_name| "/home/eln/#{repo_name}.git" }
+gem "lit", eln: 'literature', branch: 'release_pi', :group => [:plugins,:development,:production]
+
 ####
