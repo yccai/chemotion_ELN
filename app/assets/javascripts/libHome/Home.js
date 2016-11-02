@@ -2,7 +2,8 @@ import React, {Component} from 'react'
 import ReactDOM from 'react-dom'
 import { Grid, Row} from 'react-bootstrap';
 
-import Navigation from '../components/Navigation'
+import Navigation from './Navigation'
+import NewSession from './NewSession'
 
 class Home extends Component {
   constructor(props) {
@@ -18,6 +19,8 @@ class Home extends Component {
           <Navigation/>
         </Row>
         <Row className="card-content">
+          <br/>
+          <NewSession/>
         </Row>
       </Grid>
     )
