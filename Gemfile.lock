@@ -15,6 +15,7 @@ GIT
 GIT
   remote: git://github.com/ComPlat/sablon.git
   revision: 03130357d526230e36647a0d5d348ed3c5a51d42
+  branch: html-converter
   specs:
     sablon (0.0.19)
       nokogiri (>= 1.6.0)

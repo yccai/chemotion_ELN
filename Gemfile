@@ -47,7 +47,7 @@ gem 'awesome_print'
 
 # Report Generator
 gem 'rtf'
-gem 'sablon', github: 'ComPlat/sablon'
+gem 'sablon', github: 'ComPlat/sablon', :branch => "html-converter"
 gem 'rmagick'
 gem 'axlsx', git: 'git://github.com/randym/axlsx'
 # Import of elements from XLS and CSV file

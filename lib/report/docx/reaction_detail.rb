@@ -158,7 +158,46 @@ module Report
       end
 
       def description
-        obj.description_contents
+        # obj.description_contents
+        html_body = <<-HTML
+<div>
+    <p>
+      <u>sdasdsasdasd</u>
+      <u> I dont know the sum C</u><sub>x</sub>H<sub>y d</sub>
+    </p>
+    <ol>
+        <li>123123</li>
+        <li>23</li>
+    </ol>
+    <p><br></p>
+    <p>zuizuizuizuizui</p>
+    <h1>Heading firsttttttttttttt</h1>
+    <h2>2nd Headingggggggggggg</h2>
+    <ul>
+        <li>abc</li>
+        <li>def</li>
+    </ul>
+    <p>
+      <strong><em>This is italic </em>asdasd, and this is blod text</strong>
+    </p>
+    <p><sub>asd</sub>a</p>
+    <p><br></p>
+    <p>
+      <span style="background-color: #0066CC;">Test background color</span>
+    </p>
+    <p><br></p>
+    <p>Inserted text</p>
+    <p>
+      <span style="color: #DE1BD7">asdasdasd</span>
+    </p>
+    <p>
+      <span style="color: #008A00; background-color: #000000">asdasdasd</span>
+    </p>
+</div>
+HTML
+
+        Sablon.content(:html, html_body)
+        # Sablon.content(:html, Delta.new(obj.description).getHTML())
       end
 
       def solvents
