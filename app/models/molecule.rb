@@ -42,16 +42,15 @@ class Molecule < ActiveRecord::Base
     molfile = self.skip_residues(molfile)
 
     babel_info = Chemotion::OpenBabelService.molecule_info_from_molfile(molfile)
-
+    ob_molfile = babel_info[:molfile]
     inchikey = babel_info[:inchikey]
     unless inchikey.blank?
-
       #todo: consistent naming
       molecule = Molecule.find_or_create_by(inchikey: inchikey,
         is_partial: is_partial) do |molecule|
         pubchem_info =
           Chemotion::PubchemService.molecule_info_from_inchikey(inchikey)
-        molecule.molfile = molfile
+        molecule.molfile = ob_molfile.empty? && molfile || ob_molfile
         molecule.assign_molecule_data babel_info, pubchem_info
       end
       molecule

@@ -52,6 +52,14 @@ M  END
     c.set_out_format 'inchikey'
     inchikey = c.write_string(m, false).to_s.gsub(/\n/, "").strip
 
+    c = OpenBabel::OBConversion.new
+    c.set_in_format 'smi'
+
+    m = OpenBabel::OBMol.new
+    c.read_string m, smiles
+    c.set_out_format 'mol'
+    ob_molfile = c.write_string(m, false).to_s
+
     {
       charge: m.get_total_charge,
       mol_wt: m.get_mol_wt,
@@ -62,9 +70,10 @@ M  END
       inchikey: inchikey,
       inchi: inchi,
       formula: m.get_formula,
-      svg: svg_from_molfile(molfile),
+      svg: svg_from_molfile(ob_molfile.empty? && molfile || ob_molfile),
       cano_smiles: ca_smiles,
-      fp: fingerprint_from_molfile(molfile)
+      fp: fingerprint_from_molfile(molfile),
+      molfile: ob_molfile
     }
 
   end
