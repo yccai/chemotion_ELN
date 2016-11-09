@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161024083139) do
+ActiveRecord::Schema.define(version: 20161109113601) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -104,6 +104,7 @@ ActiveRecord::Schema.define(version: 20161024083139) do
     t.string   "ancestry"
     t.integer  "sample_id"
     t.string   "container_type"
+    t.text     "description"
   end
 
   add_index "containers", ["sample_id"], name: "index_containers_on_sample_id", using: :btree
