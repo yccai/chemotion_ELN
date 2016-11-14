@@ -8,6 +8,7 @@ import ElementActions from './actions/ElementActions';
 import CollectionActions from './actions/CollectionActions';
 import ReactionDetailsLiteratures from './ReactionDetailsLiteratures';
 import ReactionDetailsAnalyses from './ReactionDetailsAnalyses';
+import ReactionDetailsContainers from './ReactionDetailsContainers';
 import ReactionDetailsScheme from './ReactionDetailsScheme';
 import ReactionDetailsProperties from './ReactionDetailsProperties';
 import UIStore from './stores/UIStore';
@@ -320,6 +321,14 @@ export default class ReactionDetails extends Component {
             </Tab>
             <Tab eventKey={3} title={'Analyses'}>
               {this.productAnalyses()}
+            </Tab>
+            <Tab eventKey={4} title={'Data'}>
+              <ListGroupItem style={{paddingBottom: 20}}>
+                <ReactionDetailsContainers
+                    reaction={reaction}
+                    parent={this}
+                />
+            </ListGroupItem>
             </Tab>
             {extraTabs.map((e,i)=>e(i))}
           </Tabs>

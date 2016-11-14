@@ -2,6 +2,7 @@ import 'whatwg-fetch';
 import Sample from '../models/Sample';
 import UIStore from '../stores/UIStore'
 import NotificationActions from '../actions/NotificationActions'
+import AttachmentFetcher from './AttachmentFetcher'
 import _ from 'lodash';
 
 export default class SamplesFetcher {
@@ -142,7 +143,8 @@ export default class SamplesFetcher {
 
   static update(sample) {
     //let files = SamplesFetcher.getFileListfrom(sample.serialize())
-    let files = SamplesFetcher.getFileListfrom2(sample)
+    //let files = SamplesFetcher.getFileListfrom2(sample)
+    let files = AttachmentFetcher.getFileListfrom(sample.container)
     let promise = ()=> fetch('/api/v1/samples/' + sample.id, {
       credentials: 'same-origin',
       method: 'put',
@@ -160,7 +162,7 @@ export default class SamplesFetcher {
     });
 
     if(files.length > 0) {
-      return SamplesFetcher.uploadFiles(files)().then(()=> promise());
+      return AttachmentFetcher.uploadFiles(files)().then(()=> promise());
     } else {
       return promise()
     }
@@ -168,7 +170,8 @@ export default class SamplesFetcher {
   }
 
   static create(sample) {
-    let files = SamplesFetcher.getFileListfrom(sample.serialize())
+    //let files = SamplesFetcher.getFileListfrom(sample.serialize())
+    let files = AttachmentFetcher.getFileListfrom(sample.container)
     let promise = ()=> fetch('/api/v1/samples', {
       credentials: 'same-origin',
       method: 'post',
@@ -185,7 +188,7 @@ export default class SamplesFetcher {
       console.log(errorMessage);
     });
     if(files.length > 0) {
-      return SamplesFetcher.uploadFiles(files)().then(()=> promise());
+      return AttachmentFetcher.uploadFiles(files)().then(()=> promise());
     } else {
       return promise()
     }
