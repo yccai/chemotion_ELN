@@ -25,11 +25,8 @@ export default class ReactionDetails extends Component {
     super(props);
     const {reaction} = props;
     this.state = {
-      reaction,
+      reaction
     };
-    if(reaction.hasMaterials()) {
-      this.updateReactionSvg();
-    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -37,11 +34,19 @@ export default class ReactionDetails extends Component {
     const nextReaction = nextProps.reaction;
     if (nextReaction.id != reaction.id ||
         nextReaction.updated_at != reaction.updated_at ||
-        nextReaction.temperature != reaction.temperature) {
+        nextReaction.changed) {
       this.setState({
         reaction: nextReaction
       });
     }
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    const {reaction} = this.state;
+    const nextReaction = nextProps.reaction;
+    return (nextReaction.id != reaction.id ||
+            nextReaction.updated_at != reaction.updated_at ||
+            !!nextReaction.changed);
   }
 
   updateReactionSvg() {
